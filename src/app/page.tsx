@@ -18,9 +18,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription, // <-- Import Deskripsi
   CardFooter,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
+import { Save, Sparkles } from "lucide-react"; // <-- Import Ikon
+
+// Tipe data untuk form kita
 interface FormData {
   nama_outlet: string;
   nama_owner: string;
@@ -31,7 +37,7 @@ interface FormData {
   tipe_outlet: string;
   tipe_langganan: string;
   hari_instalasi: string;
-  tanggal_instalasi: string;
+  tanggal_instalasi: Date | undefined;
   pukul_instalasi: string;
   link_meet: string;
 }
@@ -46,22 +52,28 @@ const initialFormData: FormData = {
   tipe_outlet: "",
   tipe_langganan: "",
   hari_instalasi: "",
-  tanggal_instalasi: "",
+  tanggal_instalasi: undefined,
   pukul_instalasi: "",
   link_meet: "",
 };
+
+// Opsi untuk dropdown waktu
+const hours = Array.from({ length: 24 }, (_, i) =>
+  i.toString().padStart(2, "0")
+);
+const minutes = ["00", "15", "30", "45"];
 
 export default function Home() {
   const [rawText, setRawText] = useState("");
   const [formData, setFormData] = useState<FormData>(initialFormData);
 
+  // (Semua fungsi handler Anda tetap sama persis)
+  // ...
+  // handleInputChange
   const handleInputChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+  // handleSelectChange
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -69,7 +81,23 @@ export default function Home() {
       ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
     }));
   };
-
+  // handleDateChange
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData((prev) => ({ ...prev, tanggal_instalasi: date }));
+  };
+  // handleTimeChange
+  const handleTimeChange = (part: "hour" | "minute", value: string) => {
+    const [currentHour = "09", currentMinute = "00"] =
+      formData.pukul_instalasi.split(":");
+    let newTime: string;
+    if (part === "hour") {
+      newTime = `${value}:${currentMinute}`;
+    } else {
+      newTime = `${currentHour}:${value}`;
+    }
+    setFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
+  };
+  // handleParse
   const handleParse = () => {
     const baris = rawText.split("\n");
     const dataTerurai: any = {
@@ -104,59 +132,84 @@ export default function Home() {
         else if (lowerLine.includes("prime"))
           dataTerurai.tipe_langganan = "Prime";
       });
-
       setFormData((prev) => ({
         ...prev,
         ...dataTerurai,
         hari_instalasi: "",
-        tanggal_instalasi: "",
+        tanggal_instalasi: undefined,
         pukul_instalasi: "",
         link_meet: dataTerurai.tipe_outlet === "Offline" ? "" : prev.link_meet,
       }));
-
       toast.success("Data berhasil diurai!", {
-        description: "Silakan periksa & lengkapi form di Langkah 2.",
+        description: "Formulir di sebelah kanan telah terisi.",
       });
     } catch (error: any) {
       toast.error("Gagal mengurai data", { description: error.message });
     }
   };
-
+  // handleSubmit
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    if (!formData.tanggal_instalasi) {
+      toast.error("Validasi Gagal", {
+        description: "Tanggal Instalasi wajib diisi.",
+      });
+      return;
+    }
+    if (
+      !formData.pukul_instalasi ||
+      formData.pukul_instalasi.split(":").length < 2
+    ) {
+      toast.error("Validasi Gagal", {
+        description: "Pukul Instalasi (Jam dan Menit) wajib diisi.",
+      });
+      return;
+    }
+    const dataToSend = {
+      ...formData,
+      tanggal_instalasi: format(formData.tanggal_instalasi, "yyyy-MM-dd"),
+    };
     const promise = () =>
       new Promise(async (resolve, reject) => {
         try {
           const response = await fetch("/api/simpan-jadwal", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(dataToSend),
           });
           const result = await response.json();
           if (!response.ok)
             throw new Error(result.error || "Gagal menyimpan data");
-
-          setFormData(initialFormData); // Reset form
+          setFormData(initialFormData);
           setRawText("");
-          resolve(result.data[0]); // Kirim data yang sukses
+          resolve(result.data[0]);
         } catch (error) {
-          reject(error); // Kirim error
+          reject(error);
         }
       });
-
     toast.promise(promise, {
       loading: "Menyimpan data...",
       success: (data: any) => `Data berhasil disimpan! (ID: ${data.id})`,
       error: (err: any) => `Error: ${err.message}`,
     });
   };
+  // ...
+  // Ambil nilai jam & menit saat ini
+  const [currentHour = "", currentMinute = ""] =
+    formData.pukul_instalasi.split(":");
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Alat Pembuat Jadwal</h1>
-        <div className="space-x-2">
+    // Lebarkan max-width untuk layout 2 kolom
+    <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
+      {/* --- HEADER BARU --- */}
+      <header className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Parser Jadwal</h1>
+          <p className="text-muted-foreground">
+            Tempel data mentah, verifikasi, lalu simpan ke database.
+          </p>
+        </div>
+        <div className="flex shrink-0 space-x-2">
           <Button asChild variant="secondary">
             <Link href="/tabel">Lihat Daftar Tabel</Link>
           </Button>
@@ -166,145 +219,205 @@ export default function Home() {
         </div>
       </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Langkah 1: Paste Data Mentah</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={rawText}
-            onChange={(e) => setRawText(e.target.value)}
-            rows={10}
-            placeholder="Paste data mentah dari spreadsheet di sini..."
-          />
-        </CardContent>
-        <CardFooter>
-          <Button onClick={handleParse}>Urai Data (Parse)</Button>
-        </CardFooter>
-      </Card>
+      {/* --- TATA LETAK 2 KOLOM BARU --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 md:items-start">
+        {/* --- KOLOM KIRI (Sticky) --- */}
+        <div className="md:sticky md:top-8 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Langkah 1: Tempel Data Mentah</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={rawText}
+                onChange={(e) => setRawText(e.target.value)}
+                rows={15} // Buat lebih tinggi
+                placeholder="Tempel data mentah dari spreadsheet di sini..."
+              />
+            </CardContent>
+            <CardFooter>
+              <Button onClick={handleParse} className="w-full" size="lg">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Urai Data
+              </Button>
+            </CardFooter>
+          </Card>
+          <p className="text-sm text-muted-foreground text-center md:text-left">
+            Data yang diurai akan muncul di formulir di sebelah kanan.
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Langkah 2: Verifikasi Data & Simpan Jadwal</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Kolom Kiri */}
-              <div className="space-y-4">
-                <FormInput
-                  label="Nama Outlet"
-                  name="nama_outlet"
-                  value={formData.nama_outlet}
-                  onChange={handleInputChange}
-                />
-                <FormInput
-                  label="No Telepon"
-                  name="no_telepon"
-                  value={formData.no_telepon}
-                  onChange={handleInputChange}
-                />
-                <FormInput
-                  label="Alamat"
-                  name="alamat"
-                  value={formData.alamat}
-                  onChange={handleInputChange}
-                />
-                <FormInput
-                  label="SCH Leads"
-                  name="sch_leads"
-                  value={formData.sch_leads}
-                  onChange={handleInputChange}
-                />
-                <FormInput
-                  label="Hari Instalasi"
-                  name="hari_instalasi"
-                  value={formData.hari_instalasi}
-                  onChange={handleInputChange}
-                  required
-                />
+        {/* --- KOLOM KANAN (Scrolling) --- */}
+        <form onSubmit={handleSubmit} className="mt-8 md:mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Langkah 2: Verifikasi & Simpan</CardTitle>
+              <CardDescription>
+                Periksa data yang diurai, perbaiki jika salah, dan lengkapi
+                jadwal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Layout form di-tweak menjadi 'sm:grid-cols-2' */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Kolom Kiri Form */}
+                <div className="space-y-4">
+                  <FormInput
+                    label="Nama Outlet"
+                    name="nama_outlet"
+                    value={formData.nama_outlet}
+                    onChange={handleInputChange}
+                  />
+                  <FormInput
+                    label="No Telepon"
+                    name="no_telepon"
+                    value={formData.no_telepon}
+                    onChange={handleInputChange}
+                  />
+                  <FormInput
+                    label="Alamat"
+                    name="alamat"
+                    value={formData.alamat}
+                    onChange={handleInputChange}
+                  />
+                  <FormInput
+                    label="SCH Leads"
+                    name="sch_leads"
+                    value={formData.sch_leads}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Kolom Kanan Form */}
+                <div className="space-y-4">
+                  <FormInput
+                    label="Nama Owner"
+                    name="nama_owner"
+                    value={formData.nama_owner}
+                    onChange={handleInputChange}
+                  />
+                  <FormInput
+                    label="No Invoice"
+                    name="no_invoice"
+                    value={formData.no_invoice}
+                    onChange={handleInputChange}
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="tipe_outlet">Tipe (Online/Offline)</Label>
+                    <Select
+                      name="tipe_outlet"
+                      value={formData.tipe_outlet}
+                      onValueChange={(value) =>
+                        handleSelectChange("tipe_outlet", value)
+                      }
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="-- Pilih Tipe --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Online">Online</SelectItem>
+                        <SelectItem value="Offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <FormInput
+                    label="Tipe Langganan"
+                    name="tipe_langganan"
+                    value={formData.tipe_langganan}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
-              {/* Kolom Kanan */}
-              <div className="space-y-4">
-                <FormInput
-                  label="Nama Owner"
-                  name="nama_owner"
-                  value={formData.nama_owner}
-                  onChange={handleInputChange}
-                />
-                <FormInput
-                  label="No Invoice"
-                  name="no_invoice"
-                  value={formData.no_invoice}
-                  onChange={handleInputChange}
-                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="tipe_outlet">Tipe (Online/Offline)</Label>
-                  <Select
-                    name="tipe_outlet"
-                    value={formData.tipe_outlet}
-                    onValueChange={(value) =>
-                      handleSelectChange("tipe_outlet", value)
-                    }
+              {/* Bagian Jadwal (Layout Grid Baru yang Lebih Aman) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                {/* Hari Instalasi (Satu Baris Penuh) */}
+                <div className="sm:col-span-2">
+                  <FormInput
+                    label="Hari Instalasi"
+                    name="hari_instalasi"
+                    value={formData.hari_instalasi}
+                    onChange={handleInputChange}
                     required
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="-- Pilih Tipe --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Online">Online</SelectItem>
-                      <SelectItem value="Offline">Offline</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
 
+                {/* Tanggal Instalasi (Setengah Baris) */}
+                <div className="space-y-2">
+                  <Label>Tanggal Instalasi</Label>
+                  <DatePicker
+                    date={formData.tanggal_instalasi}
+                    onSelect={handleDateChange}
+                  />
+                </div>
+
+                {/* Pukul Instalasi (Setengah Baris) */}
+                <div className="space-y-2">
+                  <Label>Pukul Instalasi</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={currentHour}
+                      onValueChange={(value) => handleTimeChange("hour", value)}
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Jam" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {hours.map((hour) => (
+                          <SelectItem key={hour} value={hour}>
+                            {hour}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={currentMinute}
+                      onValueChange={(value) =>
+                        handleTimeChange("minute", value)
+                      }
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Menit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {minutes.map((minute) => (
+                          <SelectItem key={minute} value={minute}>
+                            {minute}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
                 <FormInput
-                  label="Tipe Langganan"
-                  name="tipe_langganan"
-                  value={formData.tipe_langganan}
+                  label="Link Meet"
+                  name="link_meet"
+                  value={formData.link_meet}
                   onChange={handleInputChange}
-                />
-                <FormInput
-                  label="Tanggal Instalasi"
-                  name="tanggal_instalasi"
-                  value={formData.tanggal_instalasi}
-                  onChange={handleInputChange}
-                  type="date"
-                  required
-                />
-                <FormInput
-                  label="Pukul Instalasi"
-                  name="pukul_instalasi"
-                  value={formData.pukul_instalasi}
-                  onChange={handleInputChange}
-                  type="time"
-                  required
+                  disabled={formData.tipe_outlet === "Offline"}
+                  required={formData.tipe_outlet === "Online"}
                 />
               </div>
-            </div>
-            {/* Field Link Meet (lebar penuh) */}
-            <FormInput
-              label="Link Meet"
-              name="link_meet"
-              value={formData.link_meet}
-              onChange={handleInputChange}
-              disabled={formData.tipe_outlet === "Offline"}
-              required={formData.tipe_outlet === "Online"}
-            />
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" size="lg" className="w-full">
-              Simpan Jadwal Baru
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" size="lg" className="w-full">
+                <Save className="mr-2 h-4 w-4" />
+                Simpan Jadwal Baru
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </div>
     </div>
   );
 }
 
-// Helper komponen FormInput baru untuk shadcn/ui
+// Helper komponen FormInput (tetap sama)
 interface FormInputProps {
   label: string;
   name: string;

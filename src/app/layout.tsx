@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css"; // File CSS global Anda
+import "./globals.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Toaster } from "@/components/ui/sonner";
 

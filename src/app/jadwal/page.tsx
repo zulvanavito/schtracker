@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import Link from "next/link";
@@ -22,9 +22,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import type { Event as BigCalendarEvent } from "react-big-calendar";
+import type { Event as BigCalendarEvent, View } from "react-big-calendar";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
-// Definisikan Tipe Data
+// ... (Interface Tipe Data Anda: LogPesan, Jadwal, EditFormData) ...
 interface LogPesan {
   id: number;
   created_at: string;
@@ -46,13 +48,31 @@ interface Jadwal {
   link_meet: string;
   log_pesan: LogPesan[];
 }
+interface EditFormData {
+  id?: number;
+  nama_outlet?: string;
+  nama_owner?: string;
+  no_telepon?: string;
+  no_invoice?: string;
+  sch_leads?: string;
+  alamat?: string;
+  tipe_outlet?: string;
+  tipe_langganan?: string;
+  hari_instalasi?: string;
+  tanggal_instalasi?: Date | undefined;
+  pukul_instalasi?: string;
+  link_meet?: string;
+}
 
-// Tipe data untuk form edit (bisa sebagian)
-type EditFormData = Partial<Jadwal>;
+// ... (Opsi `hours` dan `minutes` Anda) ...
+const hours = Array.from({ length: 24 }, (_, i) =>
+  i.toString().padStart(2, "0")
+);
+const minutes = ["00", "15", "30", "45"];
 
 const localizer = momentLocalizer(moment);
 
-// Fungsi Hitung Durasi
+// ... (Fungsi calculateDurationInMs Anda) ...
 function calculateDurationInMs(item: Jadwal) {
   let durationHours = 0;
   const langganan = item.tipe_langganan
@@ -81,18 +101,33 @@ function calculateDurationInMs(item: Jadwal) {
   return durationMs;
 }
 
+// --- BARU: Fungsi untuk menentukan style event ---
+const eventPropGetter = (event: BigCalendarEvent) => {
+  const resource = event.resource as Jadwal; // Ambil data asli kita
+  let className = "";
+
+  if (resource.tipe_outlet === "Online") {
+    className = "event-online";
+  } else if (resource.tipe_outlet === "Offline") {
+    className = "event-offline";
+  }
+
+  return { className };
+};
+
 export default function HalamanJadwal() {
-  // FIX Error #3: Ganti 'any[]' dengan tipe yang lebih spesifik
   const [events, setEvents] = useState<BigCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // State untuk Modal
+  // ... (Semua state Anda: date, view, isModalOpen, dll) ...
+  const [date, setDate] = useState(new Date());
+  const [view, setView] = useState<View>("week");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Jadwal | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<EditFormData | null>(null);
 
-  // Fungsi Fetch Jadwal
+  // ... (Fungsi fetchJadwal Anda - tidak berubah) ...
   async function fetchJadwal() {
     setLoading(true);
     try {
@@ -110,12 +145,11 @@ export default function HalamanJadwal() {
           title: `[${item.tipe_outlet}] - ${item.nama_outlet}`,
           start: startDate,
           end: endDate,
-          resource: item, // Simpan data asli di sini
+          resource: item,
         };
       });
       setEvents(formattedEvents);
     } catch (err: unknown) {
-      // FIX Error #4: Ganti 'any' dengan 'unknown'
       if (err instanceof Error) {
         toast.error("Gagal mengambil data", { description: err.message });
       } else {
@@ -130,29 +164,37 @@ export default function HalamanJadwal() {
     fetchJadwal();
   }, []);
 
-  // --- Fungsi Modal ---
+  // ... (Fungsi onNavigate, onView - tidak berubah) ...
+  const onNavigate = useCallback(
+    (newDate: Date) => setDate(newDate),
+    [setDate]
+  );
+  const onView = useCallback((newView: View) => setView(newView), [setView]);
+
+  // ... (Fungsi openModal, closeModal - tidak berubah) ...
   const openModal = (eventResource: Jadwal) => {
-    // Perbaikan bug visual tumpang tindih
     if (window.getSelection) {
       window.getSelection()?.removeAllRanges();
     }
-
     setSelectedEvent(eventResource);
-    setEditFormData(eventResource);
+    const dateParts = eventResource.tanggal_instalasi.split("-").map(Number);
+    const safeDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+    setEditFormData({
+      ...eventResource,
+      tanggal_instalasi: safeDate,
+    });
     setIsEditing(false);
     setIsModalOpen(true);
   };
-
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
     setEditFormData(null);
   };
 
-  // --- Fungsi Hapus ---
+  // ... (Fungsi handleDelete - tidak berubah) ...
   const handleDelete = async () => {
     if (!selectedEvent) return;
-
     const promise = () =>
       new Promise(async (resolve, reject) => {
         try {
@@ -169,33 +211,77 @@ export default function HalamanJadwal() {
           reject(err);
         }
       });
-
     toast.promise(promise, {
       loading: "Menghapus jadwal...",
       success: (msg) => msg as string,
-      error: (err: Error) => `Error: ${err.message}`, // FIX Error #5
+      error: (err: Error) => `Error: ${err.message}`,
     });
   };
 
-  // --- Fungsi Edit ---
-  const handleEditFormChange = (name: string, value: string) => {
+  // ... (Fungsi handleEditInputChange, handleEditSelectChange, handleEditDateChange, handleEditTimeChange - tidak berubah) ...
+  const handleEditInputChange = (name: string, value: string) => {
     setEditFormData((prev) => ({
       ...prev,
       [name]: value,
       ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
     }));
   };
+  const handleEditSelectChange = (name: string, value: string) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
+    }));
+  };
+  const handleEditDateChange = (date: Date | undefined) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      tanggal_instalasi: date,
+    }));
+  };
+  const handleEditTimeChange = (part: "hour" | "minute", value: string) => {
+    if (!editFormData) return;
+    const [currentHour = "09", currentMinute = "00"] = (
+      editFormData.pukul_instalasi || "09:00"
+    ).split(":");
+    let newTime: string;
+    if (part === "hour") {
+      newTime = `${value}:${currentMinute}`;
+    } else {
+      newTime = `${currentHour}:${value}`;
+    }
+    setEditFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
+  };
 
+  // ... (Fungsi handleUpdateSubmit - tidak berubah) ...
   const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    if (!editFormData?.tanggal_instalasi) {
+      toast.error("Validasi Gagal", {
+        description: "Tanggal Instalasi wajib diisi.",
+      });
+      return;
+    }
+    if (
+      !editFormData?.pukul_instalasi ||
+      editFormData.pukul_instalasi.split(":").length < 2
+    ) {
+      toast.error("Validasi Gagal", {
+        description: "Pukul Instalasi (Jam dan Menit) wajib diisi.",
+      });
+      return;
+    }
+    const dataToSend = {
+      ...editFormData,
+      tanggal_instalasi: format(editFormData.tanggal_instalasi, "yyyy-MM-dd"),
+    };
     const promise = () =>
       new Promise(async (resolve, reject) => {
         try {
           const response = await fetch("/api/ubah-jadwal", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(editFormData),
+            body: JSON.stringify(dataToSend),
           });
           if (!response.ok) {
             const errData = await response.json();
@@ -208,18 +294,20 @@ export default function HalamanJadwal() {
           reject(err);
         }
       });
-
     toast.promise(promise, {
       loading: "Menyimpan perubahan...",
       success: (msg) => msg as string,
-      error: (err: Error) => `Error: ${err.message}`, // FIX Error (tambahan)
+      error: (err: any) => `Error: ${err.message}`,
     });
   };
 
+  const [editHour = "", editMinute = ""] = (
+    editFormData?.pukul_instalasi || ""
+  ).split(":");
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
-      {/* CSS untuk kalender sudah ada di globals.css */}
-
+      {/* ... (Header Anda - tidak berubah) ... */}
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Papan Jadwal (Kalender)</h1>
         <Button asChild>
@@ -231,7 +319,7 @@ export default function HalamanJadwal() {
         Tipe Outlet.
       </p>
 
-      {/* Komponen Kalender */}
+      {/* --- Perubahan pada Komponen Kalender --- */}
       <div className="h-[75vh]">
         {loading ? (
           <p>Memuat kalender...</p>
@@ -241,25 +329,31 @@ export default function HalamanJadwal() {
             events={events}
             startAccessor="start"
             endAccessor="end"
-            defaultView="week"
             views={["month", "week", "day"]}
-            // FIX Error #6: Tipe 'event' sekarang akan otomatis dikenali dari library
             onSelectEvent={(event) => openModal(event.resource as Jadwal)}
+            date={date}
+            view={view}
+            onNavigate={onNavigate}
+            onView={onView}
+            // --- INI DIA PERUBAHANNYA ---
+            eventPropGetter={eventPropGetter}
           />
         )}
       </div>
 
-      {/* --- Modal (Dialog) untuk Detail/Edit --- */}
+      {/* --- Modal (Dialog) untuk Detail/Edit (TIDAK BERUBAH) --- */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           {selectedEvent && (
             <>
               {isEditing ? (
-                // --- MODE EDIT ---
+                // --- MODE EDIT (TIDAK BERUBAH) ---
                 <form onSubmit={handleUpdateSubmit}>
+                  {/* ... (Isi form edit Anda) ... */}
                   <DialogHeader>
                     <DialogTitle>Ubah Jadwal</DialogTitle>
                   </DialogHeader>
+                  {/* --- Layout Form Diperbarui --- */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                     {/* Kolom Kiri */}
                     <div className="space-y-4">
@@ -267,32 +361,25 @@ export default function HalamanJadwal() {
                         label="Nama Outlet"
                         name="nama_outlet"
                         value={editFormData?.nama_outlet}
-                        onChange={handleEditFormChange}
+                        onChange={handleEditInputChange}
                       />
                       <FormInput
                         label="No Telepon"
                         name="no_telepon"
                         value={editFormData?.no_telepon}
-                        onChange={handleEditFormChange}
+                        onChange={handleEditInputChange}
                       />
                       <FormInput
                         label="Alamat"
                         name="alamat"
                         value={editFormData?.alamat}
-                        onChange={handleEditFormChange}
+                        onChange={handleEditInputChange}
                       />
                       <FormInput
                         label="SCH Leads"
                         name="sch_leads"
                         value={editFormData?.sch_leads}
-                        onChange={handleEditFormChange}
-                      />
-                      <FormInput
-                        label="Hari Instalasi"
-                        name="hari_instalasi"
-                        value={editFormData?.hari_instalasi}
-                        onChange={handleEditFormChange}
-                        required
+                        onChange={handleEditInputChange}
                       />
                     </div>
                     {/* Kolom Kanan */}
@@ -301,22 +388,21 @@ export default function HalamanJadwal() {
                         label="Nama Owner"
                         name="nama_owner"
                         value={editFormData?.nama_owner}
-                        onChange={handleEditFormChange}
+                        onChange={handleEditInputChange}
                       />
                       <FormInput
                         label="No Invoice"
                         name="no_invoice"
                         value={editFormData?.no_invoice}
-                        onChange={handleEditFormChange}
+                        onChange={handleEditInputChange}
                       />
-
                       <div className="space-y-2">
                         <Label>Tipe (Online/Offline)</Label>
                         <Select
                           name="tipe_outlet"
                           value={editFormData?.tipe_outlet}
                           onValueChange={(v) =>
-                            handleEditFormChange("tipe_outlet", v)
+                            handleEditSelectChange("tipe_outlet", v)
                           }
                         >
                           <SelectTrigger>
@@ -328,37 +414,87 @@ export default function HalamanJadwal() {
                           </SelectContent>
                         </Select>
                       </div>
-
                       <FormInput
                         label="Tipe Langganan"
                         name="tipe_langganan"
                         value={editFormData?.tipe_langganan}
-                        onChange={handleEditFormChange}
-                      />
-                      <FormInput
-                        label="Tanggal Instalasi"
-                        name="tanggal_instalasi"
-                        value={editFormData?.tanggal_instalasi}
-                        onChange={handleEditFormChange}
-                        type="date"
-                        required
-                      />
-                      <FormInput
-                        label="Pukul Instalasi"
-                        name="pukul_instalasi"
-                        value={editFormData?.pukul_instalasi}
-                        onChange={handleEditFormChange}
-                        type="time"
-                        required
+                        onChange={handleEditInputChange}
                       />
                     </div>
-                    {/* Bawah */}
+
+                    {/* --- Bagian Jadwal (Layout Baru) --- */}
+                    <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                      {/* Hari Instalasi (Satu Baris Penuh di 'sm' tapi setengah di 'md' - kita perbaiki) */}
+                      <div className="sm:col-span-2">
+                        <FormInput
+                          label="Hari Instalasi"
+                          name="hari_instalasi"
+                          value={editFormData?.hari_instalasi}
+                          onChange={handleEditInputChange}
+                          required
+                        />
+                      </div>
+
+                      {/* Tanggal Instalasi */}
+                      <div className="space-y-2">
+                        <Label>Tanggal Instalasi</Label>
+                        <DatePicker
+                          date={editFormData?.tanggal_instalasi}
+                          onSelect={handleEditDateChange}
+                        />
+                      </div>
+
+                      {/* Pukul Instalasi */}
+                      <div className="space-y-2">
+                        <Label>Pukul Instalasi</Label>
+                        <div className="flex gap-2">
+                          <Select
+                            value={editHour}
+                            onValueChange={(value) =>
+                              handleEditTimeChange("hour", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-1/2">
+                              <SelectValue placeholder="Jam" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {hours.map((hour) => (
+                                <SelectItem key={hour} value={hour}>
+                                  {hour}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={editMinute}
+                            onValueChange={(value) =>
+                              handleEditTimeChange("minute", value)
+                            }
+                            required
+                          >
+                            <SelectTrigger className="w-1/2">
+                              <SelectValue placeholder="Menit" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {minutes.map((minute) => (
+                                <SelectItem key={minute} value={minute}>
+                                  {minute}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Link Meet (Satu Baris Penuh) */}
                     <div className="md:col-span-2">
                       <FormInput
                         label="Link Meet"
                         name="link_meet"
                         value={editFormData?.link_meet}
-                        onChange={handleEditFormChange}
+                        onChange={handleEditInputChange}
                         disabled={editFormData?.tipe_outlet === "Offline"}
                       />
                     </div>
@@ -375,12 +511,13 @@ export default function HalamanJadwal() {
                   </DialogFooter>
                 </form>
               ) : (
-                // --- MODE VIEW ---
+                // --- MODE VIEW (TIDAK BERUBAH) ---
                 <>
                   <DialogHeader>
                     <DialogTitle>Detail Jadwal</DialogTitle>
                   </DialogHeader>
                   <div className="py-4 space-y-2">
+                    {/* ... (Isi mode view Anda) ... */}
                     <p>
                       <strong>Outlet:</strong> {selectedEvent.nama_outlet}
                     </p>
@@ -410,7 +547,6 @@ export default function HalamanJadwal() {
                       <strong>Link Meet:</strong>{" "}
                       {selectedEvent.link_meet || "-"}
                     </p>
-
                     <div className="pt-4">
                       <strong>Riwayat Pesan (Log):</strong>
                       {selectedEvent.log_pesan &&
@@ -454,7 +590,7 @@ export default function HalamanJadwal() {
   );
 }
 
-// Helper komponen FormInput baru (sama seperti di index.jsx)
+// ... (Helper FormInput Anda - tidak berubah) ...
 interface FormInputProps {
   label: string;
   name: string;
@@ -464,7 +600,6 @@ interface FormInputProps {
   required?: boolean;
   disabled?: boolean;
 }
-
 function FormInput({
   label,
   name,

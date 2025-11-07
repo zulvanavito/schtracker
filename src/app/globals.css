@@ -44,7 +44,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.65rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -68,6 +68,7 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -119,4 +120,72 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.rbc-calendar {
+  @apply rounded-md border bg-card text-card-foreground p-4;
+}
+
+.rbc-toolbar {
+  @apply mb-4 flex flex-wrap gap-2;
+}
+.rbc-toolbar button {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm;
+}
+.rbc-toolbar button:disabled {
+  @apply bg-secondary text-secondary-foreground opacity-50;
+}
+.rbc-toolbar .rbc-btn-group {
+  @apply flex gap-2;
+}
+.rbc-toolbar .rbc-toolbar-label {
+  @apply text-xl font-semibold my-auto; /* Style "November 2025" */
+}
+
+/* Grid and Headers */
+.rbc-day-bg.rbc-today {
+  @apply bg-accent;
+}
+.rbc-header {
+  @apply border-b p-2 text-center font-semibold;
+}
+.rbc-day-bg {
+  @apply border-l;
+}
+.rbc-month-view,
+.rbc-time-view,
+.rbc-day-view,
+.rbc-week-view {
+  @apply border-t border-r;
+}
+.rbc-time-header {
+  @apply border-b;
+}
+.rbc-time-content {
+  @apply border-t;
+}
+
+.rbc-event {
+  background-color: transparent !important;
+  border: none !important;
+  /* Beri padding agar isinya (wrapper) bisa penuh */
+  padding: 0 !important;
+  @apply rounded-md;
+}
+
+.rbc-event-content {
+  @apply w-full h-full;
+}
+
+.event-online .rbc-event-content {
+  @apply bg-green-500 text-white p-1 text-xs rounded-md;
+}
+
+.event-offline .rbc-event-content {
+  @apply bg-blue-500 text-white p-1 text-xs rounded-md;
+}
+
+.rbc-event:focus,
+.rbc-event.rbc-selected {
+  @apply outline-none ring-2 ring-ring ring-offset-2;
 }
