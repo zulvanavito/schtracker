@@ -16,19 +16,20 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
+import AuthButton from "@/components/AuthButton";
 
+// Definisikan Tipe Data
 interface LogPesan {
   id: number;
   created_at: string;
   tipe_pesan: string;
 }
-
 interface Jadwal {
   id: number;
   tanggal_instalasi: string;
@@ -46,6 +47,7 @@ interface Jadwal {
   log_pesan: LogPesan[];
 }
 
+// Helper format tanggal
 function formatTanggal(dateString: string) {
   if (!dateString) return "";
   const [year, month, day] = dateString.split("-");
@@ -60,10 +62,12 @@ function formatTanggal(dateString: string) {
 export default function HalamanTabel() {
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [message, setMessage] = useState(""); // Pesan status di modal
 
   // Fungsi fetchJadwal
   async function fetchJadwal() {
@@ -73,8 +77,11 @@ export default function HalamanTabel() {
       if (!response.ok) throw new Error("Gagal mengambil data jadwal");
       const dataJadwal: Jadwal[] = await response.json();
       setJadwalList(dataJadwal);
-    } catch (err: any) {
-      toast.error("Gagal mengambil data", { description: err.message });
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
+      setError(errorMessage);
+      toast.error("Gagal mengambil data", { description: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -84,7 +91,13 @@ export default function HalamanTabel() {
     fetchJadwal();
   }, []);
 
-  // Fungsi Generate Template & Simpan Log
+  const openModal = (jadwal: Jadwal) => {
+    setSelectedJadwal(jadwal);
+    setGeneratedMessage("");
+    setMessage("");
+    setIsModalOpen(true);
+  };
+
   const handleGenerateTemplate = async (type: string) => {
     if (!selectedJadwal) return;
 
@@ -99,10 +112,9 @@ export default function HalamanTabel() {
     } = selectedJadwal;
     const tanggalFormatted = formatTanggal(tanggal_instalasi);
 
-    // (Template lengkap Anda)
     switch (type) {
       case "online_reminder_awal":
-        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\n\nSeluruh rangkaian aktivitas akan dilakukan secara ONLINE melalui Google Meet.\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwalan ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
+        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\n\nSeluruh rangkaian aktivitas akan dilakukan secara ONLINE melalui Google Meet.\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwal ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
         break;
       case "online_konfirmasi_jadwal":
         template = `Halo majoopreneurs!\nTerima kasih telah melakukan konfirmasi jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nLink Google Meet : ${link_meet}\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nPerubahan jadwal dapat dilakukan selambat-latnya dalam 2x24 jam. Di luar itu, akan dikenakan biaya tambahan sebesar Rp50.000. Training tambahan dapat dilakukan dengan membeli sesi training sebesar Rp250.000/sesi selama 3 Jam. Untuk permintaan penjadwalan ulang, kakak dapat menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only). Terima kasih, Have a nice day ^^`;
@@ -111,7 +123,7 @@ export default function HalamanTabel() {
         template = `Halo majoopreneurs!\nIzin melakukan reminder jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nLink Google Meet : ${link_meet}\n\nSebelum menjalani sesi training, berikut hal-hal yang perlu diperhatikan:\n✅ Tim majoo akan menjelaskan fitur lengkap yang ada di aplikasi majoo\n✅ Dipersilakan untuk bertanya jika terdapat informasi yang belum jelas\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nTerima kasih, Have a nice day!`;
         break;
       case "offline_reminder_awal":
-        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwalan ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
+        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwal ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
         break;
       case "offline_konfirmasi_jadwal":
         template = `Halo majoopreneurs!\nTerima kasih telah melakukan konfirmasi jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nPerubahan jadwal dapat dilakukan selambat-latnya dalam 2x24 jam. Di luar itu, akan dikenakan biaya tambahan sebesar Rp50.000. Training tambahan dapat dilakukan dengan membeli sesi training sebesar Rp250.000/sesi selama 3 Jam. Untuk permintaan penjadwalan ulang, kakak dapat menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only). Terima kasih, Have a nice day ^^`;
@@ -128,21 +140,40 @@ export default function HalamanTabel() {
 
     setGeneratedMessage(template);
 
-    // Simpan Log
     try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("Anda tidak terautentikasi.");
+
+      setMessage("Membuat template dan menyimpan ke log...");
       const response = await fetch("/api/simpan-log-pesan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           jadwal_id: selectedJadwal.id,
           tipe_pesan: type,
           isi_pesan: template,
         }),
       });
-      if (!response.ok) throw new Error("Gagal menyimpan log pesan");
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Gagal menyimpan log pesan");
+      }
       toast.success("Template dibuat dan berhasil disimpan ke log.");
-    } catch (error: any) {
-      toast.error("Gagal menyimpan log", { description: error.message });
+      setMessage("");
+    } catch (error: unknown) {
+      let errorMessage = "Gagal menyimpan log";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error("Gagal menyimpan log", { description: errorMessage });
+      setMessage("");
     }
   };
 
@@ -151,88 +182,97 @@ export default function HalamanTabel() {
     toast.success("Template berhasil disalin ke clipboard!");
   };
 
-  const openModal = (jadwal: Jadwal) => {
-    setSelectedJadwal(jadwal);
-    setGeneratedMessage("");
-    setIsModalOpen(true);
-  };
+  // Tampilkan loading
+  if (loading) {
+    return <p className="text-center p-8">Memuat daftar...</p>;
+  }
+
+  // Tampilkan error
+  if (error) {
+    return <p className="text-center p-8 text-red-500">Error: {error}</p>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Daftar Semua Jadwal</h1>
-        <div className="space-x-2">
+        <div className="flex items-center gap-2">
           <Button asChild variant="outline">
             <Link href="/jadwal">Lihat Kalender</Link>
           </Button>
           <Button asChild>
             <Link href="/">+ Tambah Jadwal Baru</Link>
           </Button>
+          <AuthButton />
         </div>
       </header>
       <p className="mb-4">
         Total jadwal tersimpan: <b>{jadwalList.length}</b>
       </p>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Aksi</TableHead>
+              <TableHead>Tanggal</TableHead>
+              <TableHead>Waktu</TableHead>
+              <TableHead>Nama Outlet</TableHead>
+              <TableHead>SCH Leads</TableHead>
+              <TableHead>Tipe</TableHead>
+              <TableHead>Link Meet</TableHead>
+              <TableHead>No. Telepon</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {jadwalList.length > 0 ? (
+              jadwalList.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openModal(item)}
+                    >
+                      Buat Pesan
+                    </Button>
+                  </TableCell>
+                  <TableCell>{item.tanggal_instalasi}</TableCell>
+                  <TableCell>{item.pukul_instalasi}</TableCell>
+                  <TableCell className="font-medium">
+                    {item.nama_outlet}
+                  </TableCell>
+                  <TableCell>{item.sch_leads}</TableCell>
+                  <TableCell>{item.tipe_outlet}</TableCell>
+                  <TableCell>
+                    {item.link_meet ? (
+                      <a
+                        href={item.link_meet}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                      >
+                        Link
+                      </a>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                  <TableCell>{item.no_telepon}</TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableHead>Aksi</TableHead>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Waktu</TableHead>
-                <TableHead>Nama Outlet</TableHead>
-                <TableHead>SCH Leads</TableHead>
-                <TableHead>Tipe</TableHead>
-                <TableHead>Langganan</TableHead>
-                <TableHead>No. Telepon</TableHead>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  Belum ada data jadwal.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    Memuat data...
-                  </TableCell>
-                </TableRow>
-              ) : jadwalList.length > 0 ? (
-                jadwalList.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openModal(item)}
-                        >
-                          Buat Pesan
-                        </Button>
-                      </DialogTrigger>
-                    </TableCell>
-                    <TableCell>{item.tanggal_instalasi}</TableCell>
-                    <TableCell>{item.pukul_instalasi}</TableCell>
-                    <TableCell className="font-medium">
-                      {item.nama_outlet}
-                    </TableCell>
-                    <TableCell>{item.sch_leads}</TableCell>
-                    <TableCell>{item.tipe_outlet}</TableCell>
-                    <TableCell>{item.tipe_langganan}</TableCell>
-                    <TableCell>{item.no_telepon}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    Belum ada data jadwal.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-        {/* Modal Content */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         {selectedJadwal && (
           <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
@@ -245,7 +285,6 @@ export default function HalamanTabel() {
             </DialogHeader>
 
             <div className="py-4 space-y-4">
-              {/* Tombol Dinamis */}
               {selectedJadwal.tipe_outlet === "Online" && (
                 <div>
                   <h4 className="font-semibold mb-2">Template ONLINE</h4>
@@ -336,8 +375,15 @@ export default function HalamanTabel() {
               />
             </div>
 
-            <DialogFooter>
-              <Button onClick={copyToClipboard} disabled={!generatedMessage}>
+            <DialogFooter className="sm:justify-between">
+              {message && (
+                <p className="text-sm text-muted-foreground">{message}</p>
+              )}
+              <Button
+                onClick={copyToClipboard}
+                disabled={!generatedMessage}
+                className="mt-2 sm:mt-0"
+              >
                 Salin Teks Template
               </Button>
             </DialogFooter>

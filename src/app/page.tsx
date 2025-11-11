@@ -18,13 +18,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription, // <-- Import Deskripsi
+  CardDescription,
   CardFooter,
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
-import { Save, Sparkles } from "lucide-react"; // <-- Import Ikon
+import { Save, Sparkles } from "lucide-react";
+import AuthButton from "@/components/AuthButton";
+import { supabase } from "@/lib/supabaseClient";
 
 // Tipe data untuk form kita
 interface FormData {
@@ -40,6 +42,24 @@ interface FormData {
   tanggal_instalasi: Date | undefined;
   pukul_instalasi: string;
   link_meet: string;
+}
+
+// Tipe data untuk dikirim ke API
+interface ApiFormData extends Omit<FormData, "tanggal_instalasi"> {
+  tanggal_instalasi: string;
+  google_access_token?: string;
+}
+
+// Tipe data untuk hasil parsing
+interface ParsedData {
+  nama_outlet: string;
+  nama_owner: string;
+  no_telepon: string;
+  no_invoice: string;
+  sch_leads: string;
+  alamat: string;
+  tipe_outlet: string;
+  tipe_langganan: string;
 }
 
 const initialFormData: FormData = {
@@ -66,14 +86,14 @@ const minutes = ["00", "15", "30", "45"];
 export default function Home() {
   const [rawText, setRawText] = useState("");
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // (Semua fungsi handler Anda tetap sama persis)
-  // ...
-  // handleInputChange
+  // handleFormChange untuk Input, Textarea
   const handleInputChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  // handleSelectChange
+
+  // handleFormChange khusus untuk Select
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -81,10 +101,12 @@ export default function Home() {
       ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
     }));
   };
+
   // handleDateChange
   const handleDateChange = (date: Date | undefined) => {
     setFormData((prev) => ({ ...prev, tanggal_instalasi: date }));
   };
+
   // handleTimeChange
   const handleTimeChange = (part: "hour" | "minute", value: string) => {
     const [currentHour = "09", currentMinute = "00"] =
@@ -97,10 +119,11 @@ export default function Home() {
     }
     setFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
   };
+
   // handleParse
   const handleParse = () => {
     const baris = rawText.split("\n");
-    const dataTerurai: any = {
+    const dataTerurai: ParsedData = {
       nama_outlet: baris[0] || "",
       nama_owner: baris[1] || "",
       no_telepon: "",
@@ -114,7 +137,7 @@ export default function Home() {
       baris.forEach((line) => {
         const lowerLine = line.toLowerCase();
         if (line.match(/(\(08\)|08)\d{8,12}/))
-          dataTerurai.no_telepon = line.match(/(\(08\)|08)\d{8,12}/)[0];
+          dataTerurai.no_telepon = line.match(/(\(08\)|08)\d{8,12}/)?.[0] || "";
         if (line.startsWith("INV/")) dataTerurai.no_invoice = line.trim();
         if (line.startsWith("SCH/")) dataTerurai.sch_leads = line.trim();
         if (line.match(/^(Jl\.|Gg\.|Perumahan|Jalan|F7V2\+7G6)/i))
@@ -143,65 +166,137 @@ export default function Home() {
       toast.success("Data berhasil diurai!", {
         description: "Formulir di sebelah kanan telah terisi.",
       });
-    } catch (error: any) {
-      toast.error("Gagal mengurai data", { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      toast.error("Gagal mengurai data", { description: errorMessage });
     }
   };
-  // handleSubmit
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!formData.tanggal_instalasi) {
-      toast.error("Validasi Gagal", {
-        description: "Tanggal Instalasi wajib diisi.",
+    setIsSubmitting(true);
+
+    try {
+      // Validasi form
+      if (!formData.tanggal_instalasi) {
+        toast.error("Validasi Gagal", {
+          description: "Tanggal Instalasi wajib diisi.",
+        });
+        return;
+      }
+      if (
+        !formData.pukul_instalasi ||
+        formData.pukul_instalasi.split(":").length < 2
+      ) {
+        toast.error("Validasi Gagal", {
+          description: "Pukul Instalasi (Jam dan Menit) wajib diisi.",
+        });
+        return;
+      }
+
+      // Dapatkan session
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("Error getting session:", sessionError);
+        throw new Error("Gagal mendapatkan session: " + sessionError.message);
+      }
+
+      if (!session) {
+        throw new Error("Anda belum login. Silakan login terlebih dahulu.");
+      }
+
+      // DEBUG: Log session info
+      console.log("🔑 Session Info untuk Create:", {
+        hasSession: !!session,
+        user: session.user?.email,
+        hasAccessToken: !!session.access_token,
+        hasProviderToken: !!session.provider_token,
+        appMetadata: session.user?.app_metadata,
       });
-      return;
-    }
-    if (
-      !formData.pukul_instalasi ||
-      formData.pukul_instalasi.split(":").length < 2
-    ) {
-      toast.error("Validasi Gagal", {
-        description: "Pukul Instalasi (Jam dan Menit) wajib diisi.",
+
+      // Siapkan data untuk dikirim
+      const dataToSend: ApiFormData = {
+        ...formData,
+        tanggal_instalasi: format(formData.tanggal_instalasi, "yyyy-MM-dd"),
+      };
+
+      // SELALU kirim google_access_token jika tersedia
+      if (session.provider_token) {
+        dataToSend.google_access_token = session.provider_token;
+        console.log("✅ Mengirim google_access_token untuk create");
+      } else {
+        console.warn("⚠️ Provider token tidak tersedia untuk create");
+      }
+
+      // DEBUG: Log data yang dikirim
+      console.log("📤 Data yang dikirim ke API simpan-jadwal:", {
+        tipe_outlet: formData.tipe_outlet,
+        hasGoogleAccessToken: !!dataToSend.google_access_token,
       });
-      return;
-    }
-    const dataToSend = {
-      ...formData,
-      tanggal_instalasi: format(formData.tanggal_instalasi, "yyyy-MM-dd"),
-    };
-    const promise = () =>
-      new Promise(async (resolve, reject) => {
-        try {
-          const response = await fetch("/api/simpan-jadwal", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataToSend),
-          });
-          const result = await response.json();
-          if (!response.ok)
-            throw new Error(result.error || "Gagal menyimpan data");
-          setFormData(initialFormData);
-          setRawText("");
-          resolve(result.data[0]);
-        } catch (error) {
-          reject(error);
+
+      // Kirim request ke API
+      const response = await fetch("/api/simpan-jadwal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("❌ Server error:", result);
+        throw new Error(
+          result.error || `Gagal menyimpan data (${response.status})`
+        );
+      }
+
+      // Reset form jika sukses
+      setFormData(initialFormData);
+      setRawText("");
+
+      toast.success("Berhasil!", {
+        description: `Jadwal berhasil disimpan! Link Meet: ${
+          result.data?.link_meet || "Tidak tersedia"
+        }`,
+      });
+    } catch (error: unknown) {
+      console.error("❌ Error dalam handleSubmit:", error);
+
+      let errorMessage = "Terjadi kesalahan yang tidak diketahui";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        if (
+          error.message.includes("401") ||
+          error.message.includes("Unauthorized")
+        ) {
+          errorMessage = "Sesi login telah berakhir. Silakan login ulang.";
+        } else if (error.message.includes("Google access token")) {
+          errorMessage =
+            "Token Google tidak tersedia. Pastikan login dengan Google OAuth.";
         }
+      }
+
+      toast.error("Gagal menyimpan data", {
+        description: errorMessage,
       });
-    toast.promise(promise, {
-      loading: "Menyimpan data...",
-      success: (data: any) => `Data berhasil disimpan! (ID: ${data.id})`,
-      error: (err: any) => `Error: ${err.message}`,
-    });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  // ...
-  // Ambil nilai jam & menit saat ini
+
   const [currentHour = "", currentMinute = ""] =
     formData.pukul_instalasi.split(":");
 
   return (
-    // Lebarkan max-width untuk layout 2 kolom
     <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
-      {/* --- HEADER BARU --- */}
       <header className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Parser Jadwal</h1>
@@ -209,19 +304,18 @@ export default function Home() {
             Tempel data mentah, verifikasi, lalu simpan ke database.
           </p>
         </div>
-        <div className="flex shrink-0 space-x-2">
+        <div className="shrink-0 flex items-center gap-2">
           <Button asChild variant="secondary">
-            <Link href="/tabel">Lihat Daftar Tabel</Link>
+            <Link href="/tabel">Daftar Tabel</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/jadwal">Lihat Kalender</Link>
+            <Link href="/jadwal">Kalender</Link>
           </Button>
+          <AuthButton />
         </div>
       </header>
 
-      {/* --- TATA LETAK 2 KOLOM BARU --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 md:gap-8 md:items-start">
-        {/* --- KOLOM KIRI (Sticky) --- */}
         <div className="md:sticky md:top-8 space-y-4">
           <Card>
             <CardHeader>
@@ -231,7 +325,7 @@ export default function Home() {
               <Textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
-                rows={15} // Buat lebih tinggi
+                rows={15}
                 placeholder="Tempel data mentah dari spreadsheet di sini..."
               />
             </CardContent>
@@ -247,7 +341,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* --- KOLOM KANAN (Scrolling) --- */}
         <form onSubmit={handleSubmit} className="mt-8 md:mt-0">
           <Card>
             <CardHeader>
@@ -258,9 +351,7 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Layout form di-tweak menjadi 'sm:grid-cols-2' */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Kolom Kiri Form */}
                 <div className="space-y-4">
                   <FormInput
                     label="Nama Outlet"
@@ -287,7 +378,6 @@ export default function Home() {
                     onChange={handleInputChange}
                   />
                 </div>
-                {/* Kolom Kanan Form */}
                 <div className="space-y-4">
                   <FormInput
                     label="Nama Owner"
@@ -329,9 +419,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Bagian Jadwal (Layout Grid Baru yang Lebih Aman) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                {/* Hari Instalasi (Satu Baris Penuh) */}
                 <div className="sm:col-span-2">
                   <FormInput
                     label="Hari Instalasi"
@@ -341,8 +429,6 @@ export default function Home() {
                     required
                   />
                 </div>
-
-                {/* Tanggal Instalasi (Setengah Baris) */}
                 <div className="space-y-2">
                   <Label>Tanggal Instalasi</Label>
                   <DatePicker
@@ -350,8 +436,6 @@ export default function Home() {
                     onSelect={handleDateChange}
                   />
                 </div>
-
-                {/* Pukul Instalasi (Setengah Baris) */}
                 <div className="space-y-2">
                   <Label>Pukul Instalasi</Label>
                   <div className="flex gap-2">
@@ -395,19 +479,27 @@ export default function Home() {
 
               <div className="pt-4">
                 <FormInput
-                  label="Link Meet"
+                  label={
+                    formData.tipe_outlet === "Online"
+                      ? "Link Meet (Akan Dibuat Otomatis)"
+                      : "Link Meet (Tidak diperlukan untuk Offline)"
+                  }
                   name="link_meet"
                   value={formData.link_meet}
                   onChange={handleInputChange}
-                  disabled={formData.tipe_outlet === "Offline"}
-                  required={formData.tipe_outlet === "Online"}
+                  disabled={true}
                 />
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" size="lg" className="w-full">
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={isSubmitting}
+              >
                 <Save className="mr-2 h-4 w-4" />
-                Simpan Jadwal Baru
+                {isSubmitting ? "Menyimpan..." : "Simpan & Buat Link Meet"}
               </Button>
             </CardFooter>
           </Card>
@@ -417,7 +509,7 @@ export default function Home() {
   );
 }
 
-// Helper komponen FormInput (tetap sama)
+// Helper komponen FormInput
 interface FormInputProps {
   label: string;
   name: string;

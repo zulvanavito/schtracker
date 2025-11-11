@@ -25,8 +25,10 @@ import { toast } from "sonner";
 import type { Event as BigCalendarEvent, View } from "react-big-calendar";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { supabase } from "@/lib/supabaseClient";
+import AuthButton from "@/components/AuthButton";
 
-// ... (Interface Tipe Data Anda: LogPesan, Jadwal, EditFormData) ...
+// (Interface Tipe Data Anda: LogPesan, Jadwal, EditFormData)
 interface LogPesan {
   id: number;
   created_at: string;
@@ -47,6 +49,7 @@ interface Jadwal {
   hari_instalasi: string;
   link_meet: string;
   log_pesan: LogPesan[];
+  google_event_id?: string;
 }
 interface EditFormData {
   id?: number;
@@ -62,9 +65,9 @@ interface EditFormData {
   tanggal_instalasi?: Date | undefined;
   pukul_instalasi?: string;
   link_meet?: string;
+  google_event_id?: string;
 }
 
-// ... (Opsi `hours` dan `minutes` Anda) ...
 const hours = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0")
 );
@@ -72,8 +75,7 @@ const minutes = ["00", "15", "30", "45"];
 
 const localizer = momentLocalizer(moment);
 
-// ... (Fungsi calculateDurationInMs Anda) ...
-function calculateDurationInMs(item: Jadwal) {
+function calculateDurationInMs(item: Jadwal | EditFormData) {
   let durationHours = 0;
   const langganan = item.tipe_langganan
     ? item.tipe_langganan.toLowerCase()
@@ -101,9 +103,8 @@ function calculateDurationInMs(item: Jadwal) {
   return durationMs;
 }
 
-// --- BARU: Fungsi untuk menentukan style event ---
 const eventPropGetter = (event: BigCalendarEvent) => {
-  const resource = event.resource as Jadwal; // Ambil data asli kita
+  const resource = event.resource as Jadwal;
   let className = "";
 
   if (resource.tipe_outlet === "Online") {
@@ -118,8 +119,6 @@ const eventPropGetter = (event: BigCalendarEvent) => {
 export default function HalamanJadwal() {
   const [events, setEvents] = useState<BigCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // ... (Semua state Anda: date, view, isModalOpen, dll) ...
   const [date, setDate] = useState(new Date());
   const [view, setView] = useState<View>("week");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -127,11 +126,13 @@ export default function HalamanJadwal() {
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<EditFormData | null>(null);
 
-  // ... (Fungsi fetchJadwal Anda - tidak berubah) ...
   async function fetchJadwal() {
     setLoading(true);
+
     try {
-      const response = await fetch("/api/get-jadwal");
+      const response = await fetch("/api/get-jadwal", {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("Gagal mengambil data jadwal");
       const dataJadwal: Jadwal[] = await response.json();
 
@@ -164,14 +165,12 @@ export default function HalamanJadwal() {
     fetchJadwal();
   }, []);
 
-  // ... (Fungsi onNavigate, onView - tidak berubah) ...
   const onNavigate = useCallback(
     (newDate: Date) => setDate(newDate),
     [setDate]
   );
   const onView = useCallback((newView: View) => setView(newView), [setView]);
 
-  // ... (Fungsi openModal, closeModal - tidak berubah) ...
   const openModal = (eventResource: Jadwal) => {
     if (window.getSelection) {
       window.getSelection()?.removeAllRanges();
@@ -186,31 +185,67 @@ export default function HalamanJadwal() {
     setIsEditing(false);
     setIsModalOpen(true);
   };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
     setEditFormData(null);
   };
 
-  // ... (Fungsi handleDelete - tidak berubah) ...
   const handleDelete = async () => {
     if (!selectedEvent) return;
+
     const promise = () =>
       new Promise(async (resolve, reject) => {
         try {
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+
+          if (sessionError) throw sessionError;
+          if (!session) throw new Error("Anda tidak terautentikasi.");
+
+          const requestBody: any = {
+            id: selectedEvent.id,
+          };
+
+          if (session.provider_token) {
+            requestBody.google_access_token = session.provider_token;
+            console.log("🔑 Mengirim google_access_token untuk penghapusan");
+          } else {
+            console.log(
+              "⚠️ Provider token tidak tersedia, hanya hapus dari database"
+            );
+          }
+
           const response = await fetch("/api/hapus-jadwal", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: selectedEvent.id }),
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify(requestBody),
           });
-          if (!response.ok) throw new Error("Gagal menghapus");
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error || "Gagal menghapus");
+          }
+
           fetchJadwal();
           closeModal();
-          resolve("Jadwal berhasil dihapus!");
+
+          const successMessage = session.provider_token
+            ? "Jadwal berhasil dihapus (dari Supabase & Google Calendar)!"
+            : "Jadwal berhasil dihapus dari database! (Event Google mungkin masih ada)";
+
+          resolve(successMessage);
         } catch (err) {
           reject(err);
         }
       });
+
     toast.promise(promise, {
       loading: "Menghapus jadwal...",
       success: (msg) => msg as string,
@@ -218,7 +253,6 @@ export default function HalamanJadwal() {
     });
   };
 
-  // ... (Fungsi handleEditInputChange, handleEditSelectChange, handleEditDateChange, handleEditTimeChange - tidak berubah) ...
   const handleEditInputChange = (name: string, value: string) => {
     setEditFormData((prev) => ({
       ...prev,
@@ -226,6 +260,7 @@ export default function HalamanJadwal() {
       ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
     }));
   };
+
   const handleEditSelectChange = (name: string, value: string) => {
     setEditFormData((prev) => ({
       ...prev,
@@ -233,12 +268,14 @@ export default function HalamanJadwal() {
       ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
     }));
   };
+
   const handleEditDateChange = (date: Date | undefined) => {
     setEditFormData((prev) => ({
       ...prev,
       tanggal_instalasi: date,
     }));
   };
+
   const handleEditTimeChange = (part: "hour" | "minute", value: string) => {
     if (!editFormData) return;
     const [currentHour = "09", currentMinute = "00"] = (
@@ -253,7 +290,6 @@ export default function HalamanJadwal() {
     setEditFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
   };
 
-  // ... (Fungsi handleUpdateSubmit - tidak berubah) ...
   const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editFormData?.tanggal_instalasi) {
@@ -271,22 +307,85 @@ export default function HalamanJadwal() {
       });
       return;
     }
-    const dataToSend = {
-      ...editFormData,
-      tanggal_instalasi: format(editFormData.tanggal_instalasi, "yyyy-MM-dd"),
-    };
+
     const promise = () =>
       new Promise(async (resolve, reject) => {
         try {
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+
+          if (sessionError) throw sessionError;
+          if (!session) throw new Error("Anda tidak terautentikasi.");
+
+          console.log("🔑 Session Info untuk Update:", {
+            hasSession: !!session,
+            user: session.user?.email,
+            hasAccessToken: !!session.access_token,
+            hasProviderToken: !!session.provider_token,
+            appMetadata: session.user?.app_metadata,
+          });
+
+          const validFields = [
+            "id",
+            "nama_outlet",
+            "nama_owner",
+            "no_telepon",
+            "no_invoice",
+            "sch_leads",
+            "alamat",
+            "tipe_outlet",
+            "tipe_langganan",
+            "hari_instalasi",
+            "tanggal_instalasi",
+            "pukul_instalasi",
+            "link_meet",
+            "google_event_id",
+          ];
+
+          const filteredData: any = {};
+          validFields.forEach((field) => {
+            if (editFormData[field as keyof EditFormData] !== undefined) {
+              filteredData[field] = editFormData[field as keyof EditFormData];
+            }
+          });
+
+          filteredData.tanggal_instalasi = format(
+            editFormData.tanggal_instalasi,
+            "yyyy-MM-dd"
+          );
+
+          const requestBody: any = { ...filteredData };
+
+          if (session.provider_token) {
+            requestBody.google_access_token = session.provider_token;
+            console.log("✅ Mengirim google_access_token untuk update");
+          } else {
+            console.warn("⚠️ Provider token tidak tersedia untuk update");
+          }
+
+          console.log("📤 Data yang dikirim ke API ubah-jadwal:", {
+            id: requestBody.id,
+            tipe_outlet: requestBody.tipe_outlet,
+            hasGoogleEventId: !!requestBody.google_event_id,
+            hasGoogleAccessToken: !!requestBody.google_access_token,
+          });
+
           const response = await fetch("/api/ubah-jadwal", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(dataToSend),
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify(requestBody),
           });
+
           if (!response.ok) {
             const errData = await response.json();
             throw new Error(errData.error || "Gagal memperbarui");
           }
+
           fetchJadwal();
           closeModal();
           resolve("Jadwal berhasil diperbarui!");
@@ -294,10 +393,11 @@ export default function HalamanJadwal() {
           reject(err);
         }
       });
+
     toast.promise(promise, {
       loading: "Menyimpan perubahan...",
       success: (msg) => msg as string,
-      error: (err: any) => `Error: ${err.message}`,
+      error: (err: Error) => `Error: ${err.message}`,
     });
   };
 
@@ -307,19 +407,23 @@ export default function HalamanJadwal() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8">
-      {/* ... (Header Anda - tidak berubah) ... */}
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Papan Jadwal (Kalender)</h1>
-        <Button asChild>
-          <Link href="/">Kembali ke Halaman Utama</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="secondary">
+            <Link href="/tabel">Daftar Tabel</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/">Tambah Jadwal</Link>
+          </Button>
+          <AuthButton />
+        </div>
       </header>
       <p className="mb-4 text-muted-foreground">
         Durasi jadwal di kalender kini otomatis berdasarkan Tipe Langganan &
         Tipe Outlet.
       </p>
 
-      {/* --- Perubahan pada Komponen Kalender --- */}
       <div className="h-[75vh]">
         {loading ? (
           <p>Memuat kalender...</p>
@@ -335,27 +439,23 @@ export default function HalamanJadwal() {
             view={view}
             onNavigate={onNavigate}
             onView={onView}
-            // --- INI DIA PERUBAHANNYA ---
             eventPropGetter={eventPropGetter}
           />
         )}
       </div>
 
-      {/* --- Modal (Dialog) untuk Detail/Edit (TIDAK BERUBAH) --- */}
+      {/* PERBAIKAN: Modal dengan sintaks JSX yang benar */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           {selectedEvent && (
             <>
               {isEditing ? (
-                // --- MODE EDIT (TIDAK BERUBAH) ---
+                // PERBAIKAN: Hapus karakter minus dan kurung yang tidak perlu
                 <form onSubmit={handleUpdateSubmit}>
-                  {/* ... (Isi form edit Anda) ... */}
                   <DialogHeader>
                     <DialogTitle>Ubah Jadwal</DialogTitle>
                   </DialogHeader>
-                  {/* --- Layout Form Diperbarui --- */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                    {/* Kolom Kiri */}
                     <div className="space-y-4">
                       <FormInput
                         label="Nama Outlet"
@@ -382,7 +482,6 @@ export default function HalamanJadwal() {
                         onChange={handleEditInputChange}
                       />
                     </div>
-                    {/* Kolom Kanan */}
                     <div className="space-y-4">
                       <FormInput
                         label="Nama Owner"
@@ -422,9 +521,7 @@ export default function HalamanJadwal() {
                       />
                     </div>
 
-                    {/* --- Bagian Jadwal (Layout Baru) --- */}
                     <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                      {/* Hari Instalasi (Satu Baris Penuh di 'sm' tapi setengah di 'md' - kita perbaiki) */}
                       <div className="sm:col-span-2">
                         <FormInput
                           label="Hari Instalasi"
@@ -434,8 +531,6 @@ export default function HalamanJadwal() {
                           required
                         />
                       </div>
-
-                      {/* Tanggal Instalasi */}
                       <div className="space-y-2">
                         <Label>Tanggal Instalasi</Label>
                         <DatePicker
@@ -443,8 +538,6 @@ export default function HalamanJadwal() {
                           onSelect={handleEditDateChange}
                         />
                       </div>
-
-                      {/* Pukul Instalasi */}
                       <div className="space-y-2">
                         <Label>Pukul Instalasi</Label>
                         <div className="flex gap-2">
@@ -488,14 +581,13 @@ export default function HalamanJadwal() {
                       </div>
                     </div>
 
-                    {/* Link Meet (Satu Baris Penuh) */}
                     <div className="md:col-span-2">
                       <FormInput
-                        label="Link Meet"
+                        label="Link Meet (Akan Dibuat Otomatis)"
                         name="link_meet"
                         value={editFormData?.link_meet}
                         onChange={handleEditInputChange}
-                        disabled={editFormData?.tipe_outlet === "Offline"}
+                        disabled={true}
                       />
                     </div>
                   </div>
@@ -511,13 +603,12 @@ export default function HalamanJadwal() {
                   </DialogFooter>
                 </form>
               ) : (
-                // --- MODE VIEW (TIDAK BERUBAH) ---
+                // --- MODE VIEW ---
                 <>
                   <DialogHeader>
                     <DialogTitle>Detail Jadwal</DialogTitle>
                   </DialogHeader>
                   <div className="py-4 space-y-2">
-                    {/* ... (Isi mode view Anda) ... */}
                     <p>
                       <strong>Outlet:</strong> {selectedEvent.nama_outlet}
                     </p>
@@ -590,7 +681,6 @@ export default function HalamanJadwal() {
   );
 }
 
-// ... (Helper FormInput Anda - tidak berubah) ...
 interface FormInputProps {
   label: string;
   name: string;
@@ -600,6 +690,7 @@ interface FormInputProps {
   required?: boolean;
   disabled?: boolean;
 }
+
 function FormInput({
   label,
   name,
