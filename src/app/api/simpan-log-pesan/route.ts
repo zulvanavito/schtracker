@@ -1,184 +1,126 @@
-import { supabase } from "@/lib/supabaseClient";
-import { createClient } from "@supabase/supabase-js";
+// app/api/simpan-log-pesan/route.ts
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-// (Helper calculateDurationInMs... tetap sama)
-function calculateDurationInMs(tipe_langganan: string, tipe_outlet: string) {
-  let durationHours = 0;
-  const langganan = tipe_langganan ? tipe_langganan.toLowerCase() : "";
-  const tipe = tipe_outlet ? tipe_outlet.toLowerCase() : "";
-  switch (langganan) {
-    case "starter basic":
-      durationHours = 1;
-      break;
-    case "starter":
-      durationHours = 2;
-      break;
-    case "advance":
-    case "prime":
-    case "training berbayar":
-      durationHours = 3;
-      break;
-    default:
-      durationHours = 2;
-  }
-  let durationMs = durationHours * 60 * 60 * 1000;
-  if (tipe === "offline") {
-    durationMs += 30 * 60 * 1000;
-  }
-  return durationMs;
-}
-// (Helper createGoogleCalendarEvent... tetap sama)
-async function createGoogleCalendarEvent(
-  accessToken: string,
-  eventData: Record<string, any>
-) {
-  const response = await fetch(
-    "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(eventData),
-    }
-  );
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Google API Error:", errorData);
-    throw new Error("Gagal membuat event di Google Calendar");
-  }
-  return response.json();
-}
-
-// --- FUNGSI POST DENGAN DEBUGGING LENGKAP ---
 export async function POST(request: Request) {
   try {
-    const formInput = await request.json();
+    // Parse request body
+    const { jadwal_id, tipe_pesan, isi_pesan } = await request.json();
 
-    // 1. Debugging Header (Solusi #1 & #2)
+    console.log("📝 Data diterima untuk simpan-log-pesan:", {
+      jadwal_id,
+      tipe_pesan,
+      isi_pesan_length: isi_pesan?.length || 0,
+    });
+
+    // 1. Check Authorization Header
     const authHeader = request.headers.get("Authorization");
     console.log(
-      "Authorization Header Diterima:",
-      authHeader ? `${authHeader.substring(0, 15)}...` : "KOSONG"
+      "🔑 Authorization Header:",
+      authHeader ? `${authHeader.substring(0, 20)}...` : "MISSING"
     );
 
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "Authorization header tidak ditemukan" },
+        { error: "Authorization header required (Bearer token)" },
         { status: 401 }
       );
     }
 
-    // 2. Buat Klien Server dengan Kunci SERVICE_ROLE (Solusi #5)
-    // Pastikan SUPABASE_SERVICE_ROLE_KEY ada di .env.local
+    // 2. Extract token
+    const token = authHeader.replace("Bearer ", "");
+
+    // 3. Create Supabase client with service role key for server-side operations
     const supabaseServer = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!, // <-- WAJIB SERVICE KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
-        global: { headers: { Authorization: authHeader } },
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
       }
     );
 
-    // 3. Debugging Sesi (Solusi #2)
+    // 4. Verify the token and get user
+    console.log("👤 Verifying token...");
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabaseServer.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabaseServer.auth.getUser(token);
 
-    console.log("Session Error:", sessionError); // <-- DEBUG
-
-    if (sessionError) {
-      console.error("Session Error:", sessionError);
+    if (userError) {
+      console.error("❌ Token verification failed:", userError.message);
       return NextResponse.json(
-        { error: "Error mendapatkan session: " + sessionError.message },
-        { status: 401 }
-      );
-    }
-    if (!session) {
-      console.log("Session tidak ditemukan setelah verifikasi."); // <-- DEBUG
-      return NextResponse.json(
-        { error: "Session tidak ditemukan" },
+        { error: "Invalid token: " + userError.message },
         { status: 401 }
       );
     }
 
-    // 4. Debugging Provider Token (Solusi #2 & #3)
-    console.log("Session Ditemukan. Mengecek provider_token..."); // <-- DEBUG
-    if (!session.provider_token) {
-      console.log(
-        "Provider token KOSONG. Sesi ini mungkin basi atau tidak punya izin."
-      ); // <-- DEBUG
+    if (!user) {
+      console.error("❌ No user found for token");
       return NextResponse.json(
+        { error: "User not found. Token may be expired." },
+        { status: 401 }
+      );
+    }
+
+    console.log("✅ User verified:", user.email);
+
+    // 5. Validate required fields
+    if (!jadwal_id) {
+      return NextResponse.json(
+        { error: "jadwal_id is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!tipe_pesan) {
+      return NextResponse.json(
+        { error: "tipe_pesan is required" },
+        { status: 400 }
+      );
+    }
+
+    // 6. Insert log message into database
+    console.log("💾 Saving to database...");
+    const { data, error: insertError } = await supabaseServer
+      .from("log_pesan")
+      .insert([
         {
-          error:
-            "Token Google tidak ditemukan. Sesi Anda mungkin basi. Silakan login ulang.",
+          jadwal_id: jadwal_id,
+          tipe_pesan: tipe_pesan,
+          isi_pesan: isi_pesan || null,
+          created_at: new Date().toISOString(),
         },
-        { status: 401 }
-      );
-    }
-
-    console.log(
-      "Provider Token Ditemukan:",
-      `${session.provider_token.substring(0, 15)}...`
-    ); // <-- DEBUG
-
-    // 5. Lanjutkan Logika (Kode ini sekarang seharusnya aman)
-    const startTime = new Date(
-      `${formInput.tanggal_instalasi}T${formInput.pukul_instalasi}`
-    );
-    const durationMs = calculateDurationInMs(
-      formInput.tipe_langganan,
-      formInput.tipe_outlet
-    );
-    const endTime = new Date(startTime.getTime() + durationMs);
-
-    const googleEvent = {
-      summary: `Instalasi Majoo: ${formInput.nama_outlet}`,
-      description: `SCH Leads: ${formInput.sch_leads}\nOwner: ${formInput.nama_owner}\nNo HP: ${formInput.no_telepon}\nTipe: ${formInput.tipe_outlet} (${formInput.tipe_langganan})`,
-      start: { dateTime: startTime.toISOString(), timeZone: "Asia/Makassar" },
-      end: { dateTime: endTime.toISOString(), timeZone: "Asia/Makassar" },
-      conferenceData: {
-        createRequest: {
-          requestId: `majoo-${Date.now()}`,
-          conferenceSolutionKey: { type: "hangoutsMeet" },
-        },
-      },
-    };
-
-    const googleResponse = await createGoogleCalendarEvent(
-      session.provider_token,
-      googleEvent
-    );
-    const meetLink = googleResponse.hangoutLink;
-    const googleEventId = googleResponse.id;
-
-    const dataToInsert = {
-      ...formInput,
-      link_meet: meetLink,
-      google_event_id: googleEventId,
-    };
-
-    const { data, error: insertError } = await supabase
-      .from("jadwal")
-      .insert([dataToInsert])
+      ])
       .select()
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error("❌ Database insert error:", insertError);
+      return NextResponse.json(
+        { error: "Failed to save log: " + insertError.message },
+        { status: 500 }
+      );
+    }
 
-    console.log("SUKSES: Jadwal dan Link Meet dibuat!"); // <-- DEBUG
+    console.log("✅ Log pesan berhasil disimpan! ID:", data.id);
+
+    // 7. Return success response
     return NextResponse.json({
-      message: "Jadwal & Link Meet berhasil dibuat!",
-      data,
+      success: true,
+      message: "Log pesan berhasil disimpan!",
+      data: data,
     });
   } catch (error: unknown) {
-    let errorMessage = "Terjadi kesalahan tidak diketahui";
+    console.error("💥 Unexpected error in simpan-log-pesan:", error);
+
+    let errorMessage = "Internal server error";
     if (error instanceof Error) {
       errorMessage = error.message;
     }
-    console.error("Error di catch /api/simpan-jadwal:", errorMessage);
+
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
