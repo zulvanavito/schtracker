@@ -63,23 +63,65 @@ export default function HalamanTabel() {
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [message, setMessage] = useState(""); // Pesan status di modal
+  const [message, setMessage] = useState("");
+
+  // Fungsi untuk memeriksa dan refresh session
+  const checkAndRefreshSession = async () => {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        return null;
+      }
+
+      // Jika session ada tapi token hampir expired, refresh
+      if (session) {
+        const expiresAt = session.expires_at ? session.expires_at * 1000 : null;
+        const now = Date.now();
+        
+        // Refresh jika token akan expired dalam 5 menit
+        if (expiresAt && (expiresAt - now) < 5 * 60 * 1000) {
+          console.log('Token hampir expired, refreshing...');
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('Refresh error:', refreshError);
+            return null;
+          }
+          
+          return refreshData.session;
+        }
+        
+        return session;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error checking session:', error);
+      return null;
+    }
+  };
 
   // Fungsi fetchJadwal
   async function fetchJadwal() {
     setLoading(true);
     try {
-      const response = await fetch("/api/get-jadwal");
+      const response = await fetch("/api/get-jadwal", {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (!response.ok) throw new Error("Gagal mengambil data jadwal");
       const dataJadwal: Jadwal[] = await response.json();
       setJadwalList(dataJadwal);
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Terjadi kesalahan";
+      const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan";
       setError(errorMessage);
       toast.error("Gagal mengambil data", { description: errorMessage });
     } finally {
@@ -88,6 +130,13 @@ export default function HalamanTabel() {
   }
 
   useEffect(() => {
+    // Check session pertama kali
+    const initializeSession = async () => {
+      await checkAndRefreshSession();
+      setSessionChecked(true);
+    };
+    
+    initializeSession();
     fetchJadwal();
   }, []);
 
@@ -141,14 +190,15 @@ export default function HalamanTabel() {
     setGeneratedMessage(template);
 
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      if (!session) throw new Error("Anda tidak terautentikasi.");
+      // Refresh session sebelum mengirim request
+      const session = await checkAndRefreshSession();
+      
+      if (!session) {
+        throw new Error("Session tidak valid. Silakan login ulang.");
+      }
 
       setMessage("Membuat template dan menyimpan ke log...");
+      
       const response = await fetch("/api/simpan-log-pesan", {
         method: "POST",
         headers: {
@@ -161,13 +211,20 @@ export default function HalamanTabel() {
           isi_pesan: template,
         }),
       });
+      
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || "Gagal menyimpan log pesan");
       }
+      
       toast.success("Template dibuat dan berhasil disimpan ke log.");
       setMessage("");
+      
+      // Refresh data untuk menampilkan log terbaru
+      fetchJadwal();
+      
     } catch (error: unknown) {
+      console.error('Error saving log:', error);
       let errorMessage = "Gagal menyimpan log";
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -183,13 +240,17 @@ export default function HalamanTabel() {
   };
 
   // Tampilkan loading
-  if (loading) {
+  if (loading || !sessionChecked) {
     return <p className="text-center p-8">Memuat daftar...</p>;
   }
 
   // Tampilkan error
   if (error) {
-    return <p className="text-center p-8 text-red-500">Error: {error}</p>;
+    return (
+      <p className="text-center p-8 text-red-500">
+        Error: {error}
+      </p>
+    );
   }
 
   return (
