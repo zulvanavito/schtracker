@@ -33,21 +33,31 @@ export default function AuthButton() {
 
   const handleSignIn = async () => {
     try {
+      // Sign out first to clear existing session
+      await supabase.auth.signOut();
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          scopes:
+            "openid profile email https://www.googleapis.com/auth/calendar",
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
 
       if (error) {
         console.error("Sign in error:", error);
-        alert(`Login error: ${error.message}`);
       }
     } catch (error) {
       console.error("Unexpected error:", error);
     }
   };
+
+  
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

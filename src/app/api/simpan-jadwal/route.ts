@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/api/simpan-jadwal/route.ts
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
@@ -30,27 +31,51 @@ function calculateDurationInMs(tipe_langganan: string, tipe_outlet: string) {
 }
 
 // Helper createGoogleCalendarEvent
-async function createGoogleCalendarEvent(
-  accessToken: string,
-  eventData: Record<string, any>
-) {
-  const response = await fetch(
-    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(eventData),
+async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
+  try {
+    const response = await fetch(
+      "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...eventData,
+          conferenceData: {
+            createRequest: {
+              requestId: Math.random().toString(36).substring(2, 15),
+              conferenceSolutionKey: { type: "hangoutsMeet" },
+            },
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+
+      // Handle insufficient scopes error
+      if (
+        errorData.error?.code === 403 &&
+        errorData.error?.message.includes("insufficient authentication scopes")
+      ) {
+        throw new Error(
+          "INSUFFICIENT_SCOPES: Token tidak memiliki akses ke Google Calendar. Silakan login ulang."
+        );
+      }
+
+      throw new Error(
+        `Google API Error: ${errorData.error?.message || "Unknown error"}`
+      );
     }
-  );
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error("Google API Error:", errorData);
-    throw new Error("Gagal membuat event di Google Calendar");
+
+    return await response.json();
+  } catch (error) {
+    console.error("Google Calendar API Error:", error);
+    throw error;
   }
-  return response.json();
 }
 
 export async function POST(request: Request) {
