@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/api/simpan-jadwal/route.ts
+
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -33,47 +33,83 @@ function calculateDurationInMs(tipe_langganan: string, tipe_outlet: string) {
 // Helper createGoogleCalendarEvent
 async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
   try {
+    const event = {
+      summary: `Instalasi - ${eventData.nama_outlet}`,
+      description: `Jadwal instalasi untuk ${eventData.nama_outlet}\nPemilik: ${eventData.nama_owner}\nTelepon: ${eventData.no_telepon}`,
+      start: {
+        dateTime: new Date(
+          `${eventData.tanggal_instalasi}T${eventData.pukul_instalasi}:00`
+        ).toISOString(),
+        timeZone: "Asia/Jakarta",
+      },
+      end: {
+        dateTime: new Date(
+          new Date(
+            `${eventData.tanggal_instalasi}T${eventData.pukul_instalasi}:00`
+          ).getTime() +
+            2 * 60 * 60 * 1000
+        ).toISOString(), // 2 jam
+        timeZone: "Asia/Jakarta",
+      },
+      conferenceData: {
+        createRequest: {
+          requestId: `meet-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
+          conferenceSolutionKey: { type: "hangoutsMeet" },
+        },
+      },
+      attendees: [
+        { email: eventData.email_owner }, // jika ada email owner
+      ],
+    };
+
+    console.log(
+      "📨 Sending Google Calendar request:",
+      JSON.stringify(event, null, 2)
+    );
+
     const response = await fetch(
-      "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+      "https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...eventData,
-          conferenceData: {
-            createRequest: {
-              requestId: Math.random().toString(36).substring(2, 15),
-              conferenceSolutionKey: { type: "hangoutsMeet" },
-            },
-          },
-        }),
+        body: JSON.stringify(event),
       }
     );
 
+    const result = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json();
-
-      // Handle insufficient scopes error
-      if (
-        errorData.error?.code === 403 &&
-        errorData.error?.message.includes("insufficient authentication scopes")
-      ) {
-        throw new Error(
-          "INSUFFICIENT_SCOPES: Token tidak memiliki akses ke Google Calendar. Silakan login ulang."
-        );
-      }
-
+      console.error("❌ Google Calendar API Error:", result);
       throw new Error(
-        `Google API Error: ${errorData.error?.message || "Unknown error"}`
+        `Google API Error: ${result.error?.message || "Unknown error"}`
       );
     }
 
-    return await response.json();
+    console.log(
+      "✅ Google Calendar Response:",
+      JSON.stringify(result, null, 2)
+    );
+
+    // Extract Google Meet link dari response
+    const meetLink =
+      result.conferenceData?.entryPoints?.find(
+        (entry: any) => entry.entryPointType === "video"
+      )?.uri || result.hangoutLink;
+
+    console.log("🔗 Google Meet Link:", meetLink);
+
+    return {
+      eventId: result.id,
+      meetLink: meetLink,
+      htmlLink: result.htmlLink,
+    };
   } catch (error) {
-    console.error("Google Calendar API Error:", error);
+    console.error("❌ Google Calendar creation error:", error);
     throw error;
   }
 }
@@ -182,13 +218,12 @@ Alamat: ${formInput.alamat || "-"}`,
     if (formInput.tipe_outlet === "Online") {
       googleEvent.conferenceData = {
         createRequest: {
-          requestId: `majoo-${Date.now()}`,
+          requestId: `meet-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
           conferenceSolutionKey: { type: "hangoutsMeet" },
         },
       };
-      console.log("🌐 Adding Google Meet for ONLINE schedule");
-    } else {
-      console.log("🏢 OFFLINE schedule - No Google Meet");
     }
 
     let meetLink = "";
@@ -197,14 +232,17 @@ Alamat: ${formInput.alamat || "-"}`,
     try {
       const googleResponse = await createGoogleCalendarEvent(
         googleAccessToken,
-        googleEvent
+        {
+          ...formInput,
+          email_owner: user.email, // gunakan email dari user yang terverifikasi
+        }
       );
 
-      googleEventId = googleResponse.id;
+      googleEventId = googleResponse.eventId;
 
       // Untuk online, dapatkan meetLink dari response
       if (formInput.tipe_outlet === "Online") {
-        meetLink = googleResponse.hangoutLink || "";
+        meetLink = googleResponse.meetLink || "";
         console.log("✅ Google Calendar Event created with Meet:", meetLink);
       } else {
         console.log("✅ Google Calendar Event created for OFFLINE");
