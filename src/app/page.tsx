@@ -40,8 +40,6 @@ import {
 } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabaseClient";
-
-// Tipe data untuk form kita
 interface FormData {
   nama_outlet: string;
   nama_owner: string;
@@ -90,7 +88,6 @@ const initialFormData: FormData = {
   link_meet: "",
 };
 
-// Opsi untuk dropdown waktu
 const hours = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0")
 );
