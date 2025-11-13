@@ -23,6 +23,22 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import AuthButton from "@/components/AuthButton";
+import {
+  FileText,
+  Calendar,
+  MessageSquare,
+  Copy,
+  Phone,
+  Building,
+  Clock,
+  MapPin,
+  User,
+  Link2,
+  CheckCircle2,
+  Sparkles,
+  Send,
+  Filter,
+} from "lucide-react";
 
 // Definisikan Tipe Data
 interface LogPesan {
@@ -64,19 +80,29 @@ export default function HalamanTabel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [filterTipe, setFilterTipe] = useState<string>("semua");
 
   const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Filter jadwal berdasarkan tipe
+  const filteredJadwal = jadwalList.filter((jadwal) => {
+    if (filterTipe === "semua") return true;
+    return jadwal.tipe_outlet === filterTipe;
+  });
+
   // Fungsi untuk memeriksa dan refresh session
   const checkAndRefreshSession = async () => {
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError) {
-        console.error('Session error:', sessionError);
+        console.error("Session error:", sessionError);
         return null;
       }
 
@@ -84,26 +110,27 @@ export default function HalamanTabel() {
       if (session) {
         const expiresAt = session.expires_at ? session.expires_at * 1000 : null;
         const now = Date.now();
-        
+
         // Refresh jika token akan expired dalam 5 menit
-        if (expiresAt && (expiresAt - now) < 5 * 60 * 1000) {
-          console.log('Token hampir expired, refreshing...');
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
+        if (expiresAt && expiresAt - now < 5 * 60 * 1000) {
+          console.log("Token hampir expired, refreshing...");
+          const { data: refreshData, error: refreshError } =
+            await supabase.auth.refreshSession();
+
           if (refreshError) {
-            console.error('Refresh error:', refreshError);
+            console.error("Refresh error:", refreshError);
             return null;
           }
-          
+
           return refreshData.session;
         }
-        
+
         return session;
       }
-      
+
       return null;
     } catch (error) {
-      console.error('Error checking session:', error);
+      console.error("Error checking session:", error);
       return null;
     }
   };
@@ -114,14 +141,15 @@ export default function HalamanTabel() {
     try {
       const response = await fetch("/api/get-jadwal", {
         headers: {
-          'Cache-Control': 'no-cache'
-        }
+          "Cache-Control": "no-cache",
+        },
       });
       if (!response.ok) throw new Error("Gagal mengambil data jadwal");
       const dataJadwal: Jadwal[] = await response.json();
       setJadwalList(dataJadwal);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan";
+      const errorMessage =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
       setError(errorMessage);
       toast.error("Gagal mengambil data", { description: errorMessage });
     } finally {
@@ -135,7 +163,7 @@ export default function HalamanTabel() {
       await checkAndRefreshSession();
       setSessionChecked(true);
     };
-    
+
     initializeSession();
     fetchJadwal();
   }, []);
@@ -192,13 +220,13 @@ export default function HalamanTabel() {
     try {
       // Refresh session sebelum mengirim request
       const session = await checkAndRefreshSession();
-      
+
       if (!session) {
         throw new Error("Session tidak valid. Silakan login ulang.");
       }
 
       setMessage("Membuat template dan menyimpan ke log...");
-      
+
       const response = await fetch("/api/simpan-log-pesan", {
         method: "POST",
         headers: {
@@ -211,20 +239,19 @@ export default function HalamanTabel() {
           isi_pesan: template,
         }),
       });
-      
+
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || "Gagal menyimpan log pesan");
       }
-      
+
       toast.success("Template dibuat dan berhasil disimpan ke log.");
       setMessage("");
-      
+
       // Refresh data untuk menampilkan log terbaru
       fetchJadwal();
-      
     } catch (error: unknown) {
-      console.error('Error saving log:', error);
+      console.error("Error saving log:", error);
       let errorMessage = "Gagal menyimpan log";
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -234,6 +261,22 @@ export default function HalamanTabel() {
     }
   };
 
+  const sendToWhatsApp = () => {
+    if (!selectedJadwal?.no_telepon || !generatedMessage) {
+      toast.error("Nomor telepon atau pesan tidak tersedia");
+      return;
+    }
+
+    const phoneNumber = selectedJadwal.no_telepon.replace(/\D/g, "");
+
+    const encodedMessage = encodeURIComponent(generatedMessage);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, "_blank");
+
+    toast.success("Membuka WhatsApp...");
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedMessage);
     toast.success("Template berhasil disalin ke clipboard!");
@@ -241,216 +284,482 @@ export default function HalamanTabel() {
 
   // Tampilkan loading
   if (loading || !sessionChecked) {
-    return <p className="text-center p-8">Memuat daftar...</p>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-muted-foreground">Memuat daftar jadwal...</p>
+        </div>
+      </div>
+    );
   }
 
   // Tampilkan error
   if (error) {
     return (
-      <p className="text-center p-8 text-red-500">
-        Error: {error}
-      </p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-md">
+            <p className="text-red-600 font-medium">Error: {error}</p>
+            <Button onClick={fetchJadwal} className="mt-4">
+              Coba Lagi
+            </Button>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Daftar Semua Jadwal</h1>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <Link href="/jadwal">Lihat Kalender</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/">+ Tambah Jadwal Baru</Link>
-          </Button>
-          <AuthButton />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Daftar Jadwal
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Kelola dan kirim pesan untuk semua jadwal instalasi
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button asChild variant="outline" className="gap-2">
+              <Link href="/jadwal">
+                <Calendar className="h-4 w-4" />
+                Kalender
+              </Link>
+            </Button>
+            <Button
+              asChild
+              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600"
+            >
+              <Link href="/">
+                <Sparkles className="h-4 w-4" />
+                Tambah Jadwal
+              </Link>
+            </Button>
+            <AuthButton />
+          </div>
+        </header>
+
+        {/* Stats dan Filter */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Jadwal</p>
+                <p className="text-2xl font-bold text-slate-800">
+                  {jadwalList.length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Online</p>
+                <p className="text-2xl font-bold text-slate-800">
+                  {jadwalList.filter((j) => j.tipe_outlet === "Online").length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Building className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Offline</p>
+                <p className="text-2xl font-bold text-slate-800">
+                  {jadwalList.filter((j) => j.tipe_outlet === "Offline").length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Filter className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Filter Tipe</p>
+                <select
+                  value={filterTipe}
+                  onChange={(e) => setFilterTipe(e.target.value)}
+                  className="bg-transparent border-0 p-0 font-bold text-slate-800 text-lg focus:outline-none focus:ring-0"
+                >
+                  <option value="semua">Semua</option>
+                  <option value="Online">Online</option>
+                  <option value="Offline">Offline</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
-      </header>
-      <p className="mb-4">
-        Total jadwal tersimpan: <b>{jadwalList.length}</b>
-      </p>
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Aksi</TableHead>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Waktu</TableHead>
-              <TableHead>Nama Outlet</TableHead>
-              <TableHead>SCH Leads</TableHead>
-              <TableHead>Tipe</TableHead>
-              <TableHead>Link Meet</TableHead>
-              <TableHead>No. Telepon</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {jadwalList.length > 0 ? (
-              jadwalList.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => openModal(item)}
-                    >
-                      Buat Pesan
-                    </Button>
-                  </TableCell>
-                  <TableCell>{item.tanggal_instalasi}</TableCell>
-                  <TableCell>{item.pukul_instalasi}</TableCell>
-                  <TableCell className="font-medium">
-                    {item.nama_outlet}
-                  </TableCell>
-                  <TableCell>{item.sch_leads}</TableCell>
-                  <TableCell>{item.tipe_outlet}</TableCell>
-                  <TableCell>
-                    {item.link_meet ? (
-                      <a
-                        href={item.link_meet}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
-                      >
-                        Link
-                      </a>
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
-                  <TableCell>{item.no_telepon}</TableCell>
+        {/* Tabel */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0 overflow-hidden">
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Daftar Semua Jadwal ({filteredJadwal.length})
+            </h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                  <TableHead className="font-semibold">Aksi</TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      Tanggal
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      Waktu
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1">
+                      <Building className="h-4 w-4" />
+                      Outlet
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold">SCH Leads</TableHead>
+                  <TableHead className="font-semibold">Tipe</TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1">
+                      <Link2 className="h-4 w-4" />
+                      Link Meet
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1">
+                      <Phone className="h-4 w-4" />
+                      Telepon
+                    </div>
+                  </TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  Belum ada data jadwal.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredJadwal.length > 0 ? (
+                  filteredJadwal.map((item) => (
+                    <TableRow
+                      key={item.id}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openModal(item)}
+                          className="gap-2 rounded-xl"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Pesan
+                        </Button>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatTanggal(item.tanggal_instalasi)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          {item.pukul_instalasi}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-semibold text-slate-800">
+                            {item.nama_outlet}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            {item.nama_owner}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                          {item.sch_leads}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            item.tipe_outlet === "Online"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-orange-100 text-orange-800"
+                          }`}
+                        >
+                          {item.tipe_outlet}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {item.link_meet ? (
+                          <a
+                            href={item.link_meet}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                          >
+                            <Link2 className="h-4 w-4" />
+                            Buka Meet
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">
+                            -
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono">{item.no_telepon}</span>
+                          {item.log_pesan && item.log_pesan.length > 0 && (
+                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                              {item.log_pesan.length} pesan
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-32 text-center">
+                      <div className="space-y-3">
+                        <FileText className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
+                        <div>
+                          <p className="text-muted-foreground font-medium">
+                            {filterTipe === "semua"
+                              ? "Belum ada data jadwal."
+                              : `Tidak ada jadwal dengan tipe ${filterTipe}.`}
+                          </p>
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="mt-2 gap-2"
+                          >
+                            <Link href="/">
+                              <Sparkles className="h-4 w-4" />
+                              Tambah Jadwal Baru
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        {/* Modal Buat Pesan */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          {selectedJadwal && (
+            <DialogContent className="sm:max-w-4xl rounded-2xl border-0 shadow-2xl">
+              <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                  Buat Template Pesan
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Membuat pesan untuk:{" "}
+                  <strong>{selectedJadwal.nama_outlet}</strong> • Tipe:{" "}
+                  <span
+                    className={`font-medium ${
+                      selectedJadwal.tipe_outlet === "Online"
+                        ? "text-green-600"
+                        : "text-orange-600"
+                    }`}
+                  >
+                    {selectedJadwal.tipe_outlet}
+                  </span>{" "}
+                  • Telepon: <strong>{selectedJadwal.no_telepon}</strong>
+                </p>
+              </DialogHeader>
+
+              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                {/* Template Selection */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-lg flex items-center gap-2 text-slate-700">
+                    <Sparkles className="h-5 w-5 text-blue-500" />
+                    Pilih Template Pesan
+                  </h4>
+
+                  {selectedJadwal.tipe_outlet === "Online" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <TemplateButton
+                        title="Reminder Awal"
+                        description="Pengenalan dan konfirmasi awal"
+                        onClick={() =>
+                          handleGenerateTemplate("online_reminder_awal")
+                        }
+                        variant="outline"
+                      />
+                      <TemplateButton
+                        title="Konfirmasi Jadwal"
+                        description="Setelah merchant konfirmasi"
+                        onClick={() =>
+                          handleGenerateTemplate("online_konfirmasi_jadwal")
+                        }
+                        variant="outline"
+                      />
+                      <TemplateButton
+                        title="H-1 Reminder"
+                        description="Pengingat sehari sebelum"
+                        onClick={() =>
+                          handleGenerateTemplate("online_h1_reminder")
+                        }
+                        variant="outline"
+                      />
+                      <TemplateButton
+                        title="No Respond / Cancel"
+                        description="Jika tidak ada konfirmasi"
+                        onClick={() =>
+                          handleGenerateTemplate("no_respond_cancel")
+                        }
+                        variant="outline"
+                      />
+                    </div>
+                  )}
+
+                  {selectedJadwal.tipe_outlet === "Offline" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <TemplateButton
+                        title="Reminder Awal"
+                        description="Pengenalan dan konfirmasi awal"
+                        onClick={() =>
+                          handleGenerateTemplate("offline_reminder_awal")
+                        }
+                        variant="outline"
+                      />
+                      <TemplateButton
+                        title="Konfirmasi Jadwal"
+                        description="Setelah merchant konfirmasi"
+                        onClick={() =>
+                          handleGenerateTemplate("offline_konfirmasi_jadwal")
+                        }
+                        variant="outline"
+                      />
+                      <TemplateButton
+                        title="H-1 Reminder"
+                        description="Pengingat sehari sebelum"
+                        onClick={() =>
+                          handleGenerateTemplate("offline_h1_reminder")
+                        }
+                        variant="outline"
+                      />
+                      <TemplateButton
+                        title="No Respond / Cancel"
+                        description="Jika tidak ada konfirmasi"
+                        onClick={() =>
+                          handleGenerateTemplate("no_respond_cancel")
+                        }
+                        variant="outline"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Generated Message */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
+                    <MessageSquare className="h-4 w-4 text-blue-500" />
+                    Hasil Template Pesan:
+                  </Label>
+                  <Textarea
+                    value={generatedMessage}
+                    readOnly
+                    rows={12}
+                    placeholder="Template pesan akan muncul di sini..."
+                    className="rounded-xl border-2 focus:border-blue-300 transition-colors resize-none"
+                  />
+                </div>
+
+                {message && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p className="text-sm text-blue-700 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      {message}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="bg-slate-50/50 border-t p-6 rounded-b-2xl gap-3">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    onClick={copyToClipboard}
+                    disabled={!generatedMessage}
+                    variant="outline"
+                    className="gap-2 rounded-xl"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Salin Teks
+                  </Button>
+                  <Button
+                    onClick={sendToWhatsApp}
+                    disabled={!generatedMessage || !selectedJadwal?.no_telepon}
+                    className="gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                  >
+                    <Send className="h-4 w-4" />
+                    Kirim WhatsApp
+                  </Button>
+                </div>
+              </DialogFooter>
+            </DialogContent>
+          )}
+        </Dialog>
       </div>
-
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        {selectedJadwal && (
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Buat Template Pesan</DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Membuat pesan untuk:{" "}
-                <strong>{selectedJadwal.nama_outlet}</strong> (Tipe:{" "}
-                {selectedJadwal.tipe_outlet})
-              </p>
-            </DialogHeader>
-
-            <div className="py-4 space-y-4">
-              {selectedJadwal.tipe_outlet === "Online" && (
-                <div>
-                  <h4 className="font-semibold mb-2">Template ONLINE</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("online_reminder_awal")
-                      }
-                    >
-                      1. Reminder Awal
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("online_konfirmasi_jadwal")
-                      }
-                    >
-                      2. Konfirmasi Jadwal
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("online_h1_reminder")
-                      }
-                    >
-                      3. H-1 Reminder
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("no_respond_cancel")
-                      }
-                    >
-                      4. No Respond / Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {selectedJadwal.tipe_outlet === "Offline" && (
-                <div>
-                  <h4 className="font-semibold mb-2">Template OFFLINE</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("offline_reminder_awal")
-                      }
-                    >
-                      1. Reminder Awal
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("offline_konfirmasi_jadwal")
-                      }
-                    >
-                      2. Konfirmasi Jadwal
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("offline_h1_reminder")
-                      }
-                    >
-                      3. H-1 Reminder
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleGenerateTemplate("no_respond_cancel")
-                      }
-                    >
-                      4. No Respond / Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Hasil Template Pesan:</Label>
-              <Textarea
-                value={generatedMessage}
-                readOnly
-                rows={15}
-                placeholder="Template pesan akan muncul di sini..."
-              />
-            </div>
-
-            <DialogFooter className="sm:justify-between">
-              {message && (
-                <p className="text-sm text-muted-foreground">{message}</p>
-              )}
-              <Button
-                onClick={copyToClipboard}
-                disabled={!generatedMessage}
-                className="mt-2 sm:mt-0"
-              >
-                Salin Teks Template
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        )}
-      </Dialog>
     </div>
+  );
+}
+
+// Komponen Template Button
+interface TemplateButtonProps {
+  title: string;
+  description: string;
+  onClick: () => void;
+  variant?: "default" | "outline";
+}
+
+function TemplateButton({
+  title,
+  description,
+  onClick,
+  variant = "default",
+}: TemplateButtonProps) {
+  return (
+    <Button
+      variant={variant}
+      onClick={onClick}
+      className="h-auto py-4 px-4 justify-start text-left rounded-xl border-2 hover:border-blue-300 transition-all"
+    >
+      <div className="space-y-1">
+        <div className="font-semibold text-sm">{title}</div>
+        <div className="text-xs text-muted-foreground">{description}</div>
+      </div>
+    </Button>
   );
 }
