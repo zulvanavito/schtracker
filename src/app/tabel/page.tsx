@@ -31,7 +31,6 @@ import {
   Phone,
   Building,
   Clock,
-  MapPin,
   User,
   Link2,
   CheckCircle2,
@@ -285,7 +284,7 @@ export default function HalamanTabel() {
   // Tampilkan loading
   if (loading || !sessionChecked) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="text-muted-foreground">Memuat daftar jadwal...</p>
@@ -297,7 +296,7 @@ export default function HalamanTabel() {
   // Tampilkan error
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="bg-red-50 border border-red-200 rounded-2xl p-6 max-w-md">
             <p className="text-red-600 font-medium">Error: {error}</p>
@@ -311,7 +310,7 @@ export default function HalamanTabel() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
@@ -321,7 +320,7 @@ export default function HalamanTabel() {
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Daftar Jadwal
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -339,7 +338,7 @@ export default function HalamanTabel() {
             </Button>
             <Button
               asChild
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600"
+              className="gap-2 bg-linear-to-r from-blue-600 to-indigo-600"
             >
               <Link href="/">
                 <Sparkles className="h-4 w-4" />
@@ -578,7 +577,7 @@ export default function HalamanTabel() {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           {selectedJadwal && (
             <DialogContent className="sm:max-w-4xl rounded-2xl border-0 shadow-2xl">
-              <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+              <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
                 <DialogTitle className="flex items-center gap-2 text-xl">
                   <MessageSquare className="h-5 w-5 text-blue-600" />
                   Buat Template Pesan
@@ -721,7 +720,7 @@ export default function HalamanTabel() {
                   <Button
                     onClick={sendToWhatsApp}
                     disabled={!generatedMessage || !selectedJadwal?.no_telepon}
-                    className="gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                   >
                     <Send className="h-4 w-4" />
                     Kirim WhatsApp

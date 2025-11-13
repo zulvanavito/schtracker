@@ -296,7 +296,7 @@ export default function Home() {
     formData.pukul_instalasi.split(":");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
@@ -306,7 +306,7 @@ export default function Home() {
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Parser Jadwal
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -366,7 +366,7 @@ export default function Home() {
             }`}
           >
             <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Sparkles className="h-5 w-5 text-blue-600" />
                   Langkah 1: Tempel Data Mentah
@@ -416,7 +416,7 @@ Langganan: Starter`}
               <CardFooter className="bg-slate-50/50 border-t px-6 py-4">
                 <Button
                   onClick={handleParse}
-                  className="w-full py-6 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
+                  className="w-full py-6 text-base font-semibold rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
                   disabled={!rawText.trim()}
                   size="lg"
                 >
@@ -435,7 +435,7 @@ Langganan: Starter`}
           >
             <form onSubmit={handleSubmit}>
               <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm h-full">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 border-b">
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                     Langkah 2: Verifikasi & Simpan
@@ -623,7 +623,7 @@ Langganan: Starter`}
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full py-6 text-base font-semibold rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/25"
+                    className="w-full py-6 text-base font-semibold rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/25"
                     disabled={isSubmitting || !formData.tanggal_instalasi}
                   >
                     <Save className="mr-2 h-5 w-5" />
