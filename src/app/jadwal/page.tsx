@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -411,7 +412,7 @@ export default function HalamanJadwal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
@@ -421,7 +422,7 @@ export default function HalamanJadwal() {
                 <CalendarIcon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Kalender Jadwal
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -440,7 +441,7 @@ export default function HalamanJadwal() {
             </Button>
             <Button
               asChild
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600"
+              className="gap-2 bg-linear-to-r from-blue-600 to-indigo-600"
             >
               <Link href="/">
                 <Sparkles className="h-4 w-4" />
@@ -588,7 +589,7 @@ export default function HalamanJadwal() {
               {isEditing ? (
                 // MODE EDIT
                 <form onSubmit={handleUpdateSubmit}>
-                  <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                       <Edit className="h-5 w-5 text-blue-600" />
                       Ubah Jadwal
@@ -764,7 +765,7 @@ export default function HalamanJadwal() {
                     </Button>
                     <Button
                       type="submit"
-                      className="gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600"
+                      className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Simpan Perubahan
@@ -774,7 +775,7 @@ export default function HalamanJadwal() {
               ) : (
                 // MODE VIEW
                 <>
-                  <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                       <CalendarIcon className="h-5 w-5 text-blue-600" />
                       Detail Jadwal
@@ -961,12 +962,12 @@ function InfoItem({
               href={value}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-words"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline wrap-break-word"
             >
               {value}
             </a>
           ) : (
-            <p className="text-sm text-slate-900 break-words">{value}</p>
+            <p className="text-sm text-slate-900 wrap-break-word">{value}</p>
           )}
         </div>
       </div>
