@@ -44,6 +44,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+// (Interface Tipe Data Anda: LogPesan, Jadwal, EditFormData)
 interface LogPesan {
   id: number;
   created_at: string;
@@ -81,6 +82,30 @@ interface EditFormData {
   pukul_instalasi?: string;
   link_meet?: string;
   google_event_id?: string;
+}
+
+// Interface untuk request body
+interface DeleteRequestBody {
+  id: number;
+  google_access_token?: string;
+}
+
+interface UpdateRequestBody {
+  id?: number;
+  nama_outlet?: string;
+  nama_owner?: string;
+  no_telepon?: string;
+  no_invoice?: string;
+  sch_leads?: string;
+  alamat?: string;
+  tipe_outlet?: string;
+  tipe_langganan?: string;
+  hari_instalasi?: string;
+  tanggal_instalasi?: string;
+  pukul_instalasi?: string;
+  link_meet?: string;
+  google_event_id?: string;
+  google_access_token?: string;
 }
 
 const hours = Array.from({ length: 24 }, (_, i) =>
@@ -221,7 +246,7 @@ export default function HalamanJadwal() {
           if (sessionError) throw sessionError;
           if (!session) throw new Error("Anda tidak terautentikasi.");
 
-          const requestBody: any = {
+          const requestBody: DeleteRequestBody = {
             id: selectedEvent.id,
           };
 
@@ -346,19 +371,32 @@ export default function HalamanJadwal() {
             "google_event_id",
           ];
 
-          const filteredData: any = {};
+          const filteredData: Partial<UpdateRequestBody> = {};
           validFields.forEach((field) => {
-            if (editFormData[field as keyof EditFormData] !== undefined) {
-              filteredData[field] = editFormData[field as keyof EditFormData];
+            const value = editFormData[field as keyof EditFormData];
+            if (value !== undefined) {
+              if (field === "tanggal_instalasi") {
+                // Skip, will handle separately
+              } else {
+                filteredData[field as keyof UpdateRequestBody] = value as
+                  | string
+                  | number
+                  | undefined;
+              }
             }
           });
 
-          filteredData.tanggal_instalasi = format(
-            editFormData.tanggal_instalasi,
-            "yyyy-MM-dd"
-          );
+          // Handle tanggal_instalasi separately with proper type checking
+          if (editFormData.tanggal_instalasi) {
+            filteredData.tanggal_instalasi = format(
+              editFormData.tanggal_instalasi,
+              "yyyy-MM-dd"
+            );
+          }
 
-          const requestBody: any = { ...filteredData };
+          const requestBody: UpdateRequestBody = {
+            ...filteredData,
+          } as UpdateRequestBody;
 
           if (session.provider_token) {
             requestBody.google_access_token = session.provider_token;
@@ -411,7 +449,7 @@ export default function HalamanJadwal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
@@ -421,7 +459,7 @@ export default function HalamanJadwal() {
                 <CalendarIcon className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Kalender Jadwal
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -440,7 +478,7 @@ export default function HalamanJadwal() {
             </Button>
             <Button
               asChild
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600"
+              className="gap-2 bg-linear-to-r from-blue-600 to-indigo-600"
             >
               <Link href="/">
                 <Sparkles className="h-4 w-4" />
@@ -588,7 +626,7 @@ export default function HalamanJadwal() {
               {isEditing ? (
                 // MODE EDIT
                 <form onSubmit={handleUpdateSubmit}>
-                  <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                       <Edit className="h-5 w-5 text-blue-600" />
                       Ubah Jadwal
@@ -764,7 +802,7 @@ export default function HalamanJadwal() {
                     </Button>
                     <Button
                       type="submit"
-                      className="gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600"
+                      className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Simpan Perubahan
@@ -774,7 +812,7 @@ export default function HalamanJadwal() {
               ) : (
                 // MODE VIEW
                 <>
-                  <DialogHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                       <CalendarIcon className="h-5 w-5 text-blue-600" />
                       Detail Jadwal
@@ -961,12 +999,12 @@ function InfoItem({
               href={value}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-words"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline wrap-break-word"
             >
               {value}
             </a>
           ) : (
-            <p className="text-sm text-slate-900 break-words">{value}</p>
+            <p className="text-sm text-slate-900 wrap-break-word">{value}</p>
           )}
         </div>
       </div>
@@ -1017,39 +1055,4 @@ function FormInput({
       />
     </div>
   );
-}
-
-// Tambahkan CSS kustom untuk kalender
-const calendarStyles = `
-  .event-online {
-    background-color: #10b981 !important;
-    border-color: #059669 !important;
-  }
-  .event-offline {
-    background-color: #f59e0b !important;
-    border-color: #d97706 !important;
-  }
-  .rbc-event {
-    border-radius: 8px;
-    border: none;
-    padding: 2px 8px;
-    font-size: 0.875rem;
-  }
-  .rbc-today {
-    background-color: #eff6ff;
-  }
-  .rbc-header {
-    padding: 8px;
-    font-weight: 600;
-  }
-  .rbc-date-cell {
-    padding: 4px 8px;
-  }
-`;
-
-// Inject styles
-if (typeof document !== "undefined") {
-  const styleSheet = document.createElement("style");
-  styleSheet.innerText = calendarStyles;
-  document.head.appendChild(styleSheet);
 }
