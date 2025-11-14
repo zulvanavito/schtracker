@@ -37,6 +37,7 @@ import {
   Sparkles,
   Send,
   Filter,
+  Search,
 } from "lucide-react";
 
 // Definisikan Tipe Data
@@ -62,6 +63,7 @@ interface Jadwal {
   log_pesan: LogPesan[];
 }
 
+// Helper function untuk mengubah format SCH Leads menjadi format URL
 function formatSchLeadsToUrl(schLeads: string): string | null {
   if (!schLeads) return null;
 
@@ -94,16 +96,37 @@ export default function HalamanTabel() {
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [filterTipe, setFilterTipe] = useState<string>("semua");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null);
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Filter dengan search
   const filteredJadwal = Array.isArray(jadwalList)
     ? jadwalList.filter((jadwal) => {
-        if (filterTipe === "semua") return true;
-        return jadwal.tipe_outlet === filterTipe;
+        // Filter berdasarkan tipe
+        if (filterTipe !== "semua" && jadwal.tipe_outlet !== filterTipe) {
+          return false;
+        }
+
+        // Filter berdasarkan search query
+        if (searchQuery.trim() === "") {
+          return true;
+        }
+
+        const query = searchQuery.toLowerCase();
+        return (
+          jadwal.nama_outlet?.toLowerCase().includes(query) ||
+          jadwal.nama_owner?.toLowerCase().includes(query) ||
+          jadwal.no_telepon?.includes(query) ||
+          jadwal.sch_leads?.toLowerCase().includes(query) ||
+          jadwal.no_invoice?.toLowerCase().includes(query) ||
+          jadwal.alamat?.toLowerCase().includes(query) ||
+          jadwal.tipe_langganan?.toLowerCase().includes(query) ||
+          jadwal.hari_instalasi?.toLowerCase().includes(query)
+        );
       })
     : [];
 
@@ -493,19 +516,81 @@ export default function HalamanTabel() {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0 p-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex-1 w-full">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Cari berdasarkan nama outlet, owner, telepon, SCH Leads, invoice, alamat..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-300 focus:ring-0 transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-slate-700"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Mencari di: Nama Outlet, Owner, Telepon, SCH Leads, Invoice,
+                  Alamat, Tipe Langganan, Hari Instalasi
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterTipe("semua");
+                  }}
+                  className="rounded-xl"
+                >
+                  Reset Filter
+                </Button>
+                <Button
+                  onClick={fetchJadwal}
+                  variant="outline"
+                  className="rounded-xl"
+                >
+                  Refresh Data
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Tabel */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0 overflow-hidden">
           <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-              Daftar Semua Jadwal ({filteredJadwal.length})
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" />
+                Daftar Semua Jadwal ({filteredJadwal.length})
+                {searchQuery && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    • Hasil pencarian: "{searchQuery}"
+                  </span>
+                )}
+              </h2>
+              <div className="text-sm text-muted-foreground">
+                Menampilkan {filteredJadwal.length} dari {jadwalList.length}{" "}
+                jadwal
+              </div>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 jus">
+                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
                   <TableHead className="font-semibold">Aksi</TableHead>
                   <TableHead className="font-semibold">
                     <div className="flex items-center gap-1">
@@ -664,14 +749,26 @@ export default function HalamanTabel() {
                         <FileText className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
                         <div>
                           <p className="text-muted-foreground font-medium">
-                            {filterTipe === "semua"
-                              ? "Belum ada data jadwal."
-                              : `Tidak ada jadwal dengan tipe ${filterTipe}.`}
+                            {searchQuery || filterTipe !== "semua"
+                              ? "Tidak ada jadwal yang sesuai dengan filter."
+                              : "Belum ada data jadwal."}
                           </p>
+                          {(searchQuery || filterTipe !== "semua") && (
+                            <Button
+                              onClick={() => {
+                                setSearchQuery("");
+                                setFilterTipe("semua");
+                              }}
+                              variant="outline"
+                              className="mt-2 gap-2"
+                            >
+                              Reset Filter
+                            </Button>
+                          )}
                           <Button
                             asChild
                             variant="outline"
-                            className="mt-2 gap-2"
+                            className="mt-2 gap-2 ml-2"
                           >
                             <Link href="/">
                               <Sparkles className="h-4 w-4" />
