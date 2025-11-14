@@ -62,6 +62,20 @@ interface Jadwal {
   log_pesan: LogPesan[];
 }
 
+function formatSchLeadsToUrl(schLeads: string): string | null {
+  if (!schLeads) return null;
+
+  // Format: SCH/202510/2699 -> SCH 202510 2699
+  const formatted = schLeads
+    .replace(/\//g, " ") // Ganti semua slash dengan spasi
+    .trim();
+
+  // Encode untuk URL
+  const encoded = encodeURIComponent(formatted);
+
+  return `https://crm.majoo.id/field-operations/detail/${encoded}`;
+}
+
 // Helper format tanggal
 function formatTanggal(dateString: string) {
   if (!dateString) return "";
@@ -86,13 +100,13 @@ export default function HalamanTabel() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Filter jadwal berdasarkan tipe
-  const filteredJadwal = jadwalList.filter((jadwal) => {
-    if (filterTipe === "semua") return true;
-    return jadwal.tipe_outlet === filterTipe;
-  });
+  const filteredJadwal = Array.isArray(jadwalList)
+    ? jadwalList.filter((jadwal) => {
+        if (filterTipe === "semua") return true;
+        return jadwal.tipe_outlet === filterTipe;
+      })
+    : [];
 
-  // Fungsi untuk memeriksa dan refresh session
   const checkAndRefreshSession = async () => {
     try {
       const {
@@ -105,12 +119,10 @@ export default function HalamanTabel() {
         return null;
       }
 
-      // Jika session ada tapi token hampir expired, refresh
       if (session) {
         const expiresAt = session.expires_at ? session.expires_at * 1000 : null;
         const now = Date.now();
 
-        // Refresh jika token akan expired dalam 5 menit
         if (expiresAt && expiresAt - now < 5 * 60 * 1000) {
           console.log("Token hampir expired, refreshing...");
           const { data: refreshData, error: refreshError } =
@@ -134,23 +146,65 @@ export default function HalamanTabel() {
     }
   };
 
-  // Fungsi fetchJadwal
   async function fetchJadwal() {
     setLoading(true);
+    setError(null);
+
     try {
+      console.log("🔄 Fetching jadwal data...");
+
       const response = await fetch("/api/get-jadwal", {
+        cache: "no-cache",
         headers: {
           "Cache-Control": "no-cache",
+          Pragma: "no-cache",
         },
       });
-      if (!response.ok) throw new Error("Gagal mengambil data jadwal");
-      const dataJadwal: Jadwal[] = await response.json();
-      setJadwalList(dataJadwal);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("📋 Full API response:", result);
+
+      let dataJadwal: Jadwal[] = [];
+
+      // Handle multiple possible response structures
+      if (Array.isArray(result)) {
+        dataJadwal = result;
+      } else if (result.data && Array.isArray(result.data)) {
+        dataJadwal = result.data;
+      } else if (result.success && Array.isArray(result.data)) {
+        dataJadwal = result.data;
+      } else if (typeof result === "object" && result !== null) {
+        // Try to extract array from object values
+        const values = Object.values(result);
+        const arrayValue = values.find((val) => Array.isArray(val));
+        if (arrayValue) {
+          dataJadwal = arrayValue as Jadwal[];
+        } else {
+          console.warn("⚠️ No array found in response object");
+        }
+      }
+
+      // Validate each item has required properties
+      const validatedData = dataJadwal.filter(
+        (item) => item && typeof item === "object" && item.id !== undefined
+      );
+
+      console.log(`✅ Loaded ${validatedData.length} valid jadwal records`);
+      setJadwalList(validatedData);
     } catch (err: unknown) {
+      console.error("❌ Error fetching jadwal:", err);
       const errorMessage =
-        err instanceof Error ? err.message : "Terjadi kesalahan";
+        err instanceof Error
+          ? err.message
+          : "Terjadi kesalahan tidak diketahui";
       setError(errorMessage);
       toast.error("Gagal mengambil data", { description: errorMessage });
+      setJadwalList([]);
     } finally {
       setLoading(false);
     }
@@ -247,7 +301,6 @@ export default function HalamanTabel() {
       toast.success("Template dibuat dan berhasil disimpan ke log.");
       setMessage("");
 
-      // Refresh data untuk menampilkan log terbaru
       fetchJadwal();
     } catch (error: unknown) {
       console.error("Error saving log:", error);
@@ -351,6 +404,7 @@ export default function HalamanTabel() {
 
         {/* Stats dan Filter */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {/* Total Jadwal */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -359,11 +413,13 @@ export default function HalamanTabel() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Jadwal</p>
                 <p className="text-2xl font-bold text-slate-800">
-                  {jadwalList.length}
+                  {Array.isArray(jadwalList) ? jadwalList.length : 0}
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Online */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
@@ -372,11 +428,16 @@ export default function HalamanTabel() {
               <div>
                 <p className="text-sm text-muted-foreground">Online</p>
                 <p className="text-2xl font-bold text-slate-800">
-                  {jadwalList.filter((j) => j.tipe_outlet === "Online").length}
+                  {Array.isArray(jadwalList)
+                    ? jadwalList.filter((j) => j.tipe_outlet === "Online")
+                        .length
+                    : 0}
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Offline */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-100 rounded-lg">
@@ -385,26 +446,47 @@ export default function HalamanTabel() {
               <div>
                 <p className="text-sm text-muted-foreground">Offline</p>
                 <p className="text-2xl font-bold text-slate-800">
-                  {jadwalList.filter((j) => j.tipe_outlet === "Offline").length}
+                  {Array.isArray(jadwalList)
+                    ? jadwalList.filter((j) => j.tipe_outlet === "Offline")
+                        .length
+                    : 0}
                 </p>
               </div>
             </div>
           </div>
+
+          {/* Filter */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Filter className="h-5 w-5 text-purple-600" />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-sm text-muted-foreground">Filter Tipe</p>
                 <select
                   value={filterTipe}
                   onChange={(e) => setFilterTipe(e.target.value)}
-                  className="bg-transparent border-0 p-0 font-bold text-slate-800 text-lg focus:outline-none focus:ring-0"
+                  className="w-full bg-transparent border-0 p-0 font-bold text-slate-800 text-lg focus:outline-none focus:ring-0 cursor-pointer"
                 >
-                  <option value="semua">Semua</option>
-                  <option value="Online">Online</option>
-                  <option value="Offline">Offline</option>
+                  <option value="semua">
+                    Semua ({Array.isArray(jadwalList) ? jadwalList.length : 0})
+                  </option>
+                  <option value="Online">
+                    Online (
+                    {Array.isArray(jadwalList)
+                      ? jadwalList.filter((j) => j.tipe_outlet === "Online")
+                          .length
+                      : 0}
+                    )
+                  </option>
+                  <option value="Offline">
+                    Offline (
+                    {Array.isArray(jadwalList)
+                      ? jadwalList.filter((j) => j.tipe_outlet === "Offline")
+                          .length
+                      : 0}
+                    )
+                  </option>
                 </select>
               </div>
             </div>
@@ -423,7 +505,7 @@ export default function HalamanTabel() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 jus">
                   <TableHead className="font-semibold">Aksi</TableHead>
                   <TableHead className="font-semibold">
                     <div className="flex items-center gap-1">
@@ -441,6 +523,12 @@ export default function HalamanTabel() {
                     <div className="flex items-center gap-1">
                       <Building className="h-4 w-4" />
                       Outlet
+                    </div>
+                  </TableHead>
+                  <TableHead className="font-semibold">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-4 w-4" />
+                      No Invoice
                     </div>
                   </TableHead>
                   <TableHead className="font-semibold">SCH Leads</TableHead>
@@ -461,90 +549,117 @@ export default function HalamanTabel() {
               </TableHeader>
               <TableBody>
                 {filteredJadwal.length > 0 ? (
-                  filteredJadwal.map((item) => (
-                    <TableRow
-                      key={item.id}
-                      className="hover:bg-slate-50/50 transition-colors"
-                    >
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openModal(item)}
-                          className="gap-2 rounded-xl"
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                          Pesan
-                        </Button>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatTanggal(item.tanggal_instalasi)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          {item.pukul_instalasi}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-semibold text-slate-800">
-                            {item.nama_outlet}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            {item.nama_owner}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                          {item.sch_leads}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            item.tipe_outlet === "Online"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-orange-100 text-orange-800"
-                          }`}
-                        >
-                          {item.tipe_outlet}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {item.link_meet ? (
-                          <a
-                            href={item.link_meet}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  filteredJadwal.map((item) => {
+                    const schLeadsUrl = formatSchLeadsToUrl(item.sch_leads);
+
+                    return (
+                      <TableRow
+                        key={item.id}
+                        className="hover:bg-slate-50/50 transition-colors"
+                      >
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openModal(item)}
+                            className="gap-2 rounded-xl"
                           >
-                            <Link2 className="h-4 w-4" />
-                            Buka Meet
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">
-                            -
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono">{item.no_telepon}</span>
-                          {item.log_pesan && item.log_pesan.length > 0 && (
-                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                              {item.log_pesan.length} pesan
+                            <MessageSquare className="h-4 w-4" />
+                            Pesan
+                          </Button>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatTanggal(item.tanggal_instalasi)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            {item.pukul_instalasi}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-semibold text-slate-800">
+                              {item.nama_outlet}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              {item.nama_owner}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {item.no_invoice ? (
+                            <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-medium">
+                              {item.no_invoice}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              -
                             </span>
                           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell>
+                          {schLeadsUrl ? (
+                            <a
+                              href={schLeadsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium hover:bg-blue-200 hover:text-blue-900 transition-colors"
+                              title="Klik untuk buka di CRM"
+                            >
+                              {item.sch_leads}
+                            </a>
+                          ) : (
+                            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                              {item.sch_leads}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              item.tipe_outlet === "Online"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-orange-100 text-orange-800"
+                            }`}
+                          >
+                            {item.tipe_outlet}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {item.link_meet ? (
+                            <a
+                              href={item.link_meet}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                            >
+                              <Link2 className="h-4 w-4" />
+                              Buka Meet
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">
+                              -
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{item.no_telepon}</span>
+                            {item.log_pesan && item.log_pesan.length > 0 && (
+                              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                {item.log_pesan.length} pesan
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="h-32 text-center">
+                    <TableCell colSpan={9} className="h-32 text-center">
                       <div className="space-y-3">
                         <FileText className="h-12 w-12 text-muted-foreground mx-auto opacity-50" />
                         <div>

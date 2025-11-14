@@ -1,27 +1,52 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-// --- TAMBAHKAN BARIS INI UNTUK MEMAKSA API MENJADI DINAMIS ---
 export const dynamic = "force-dynamic";
-// --------------------------------------------------------
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { data, error } = await supabase
-      .from("jadwal")
-      .select("*, log_pesan(*)") // Tetap ambil log pesan
-      .order("tanggal_instalasi", { ascending: true });
+    console.log("🔍 GET /api/get-jadwal called");
 
-    if (error) {
-      throw error;
+    // Create Supabase client dengan service role key
+    const supabaseServer = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: { persistSession: false },
+      }
+    );
+
+    console.log("📋 Fetching jadwal data...");
+
+    const { data: jadwalData, error: fetchError } = await supabaseServer
+      .from("jadwal")
+      .select("*")
+      .order("tanggal_instalasi", { ascending: true })
+      .order("pukul_instalasi", { ascending: true });
+
+    if (fetchError) {
+      console.error("❌ Error fetching jadwal data:", fetchError);
+      return NextResponse.json(
+        { error: "Failed to fetch schedule data: " + fetchError.message },
+        { status: 500 }
+      );
     }
-    return NextResponse.json(data);
+
+    console.log(`✅ Successfully fetched ${jadwalData?.length || 0} records`);
+
+    return NextResponse.json({
+      success: true,
+      data: jadwalData || [],
+      count: jadwalData?.length || 0,
+    });
   } catch (error: unknown) {
-    // Perbaikan untuk 'any'
-    let errorMessage = "Terjadi kesalahan tidak diketahui";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error("💥 Unexpected error in get-jadwal:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
 }

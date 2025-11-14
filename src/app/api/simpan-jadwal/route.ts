@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
+// app/api/simpan-jadwal/route.ts
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -48,7 +48,7 @@ async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
             `${eventData.tanggal_instalasi}T${eventData.pukul_instalasi}:00`
           ).getTime() +
             2 * 60 * 60 * 1000
-        ).toISOString(), // 2 jam
+        ).toISOString(),
         timeZone: "Asia/Jakarta",
       },
       conferenceData: {
@@ -59,9 +59,7 @@ async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
           conferenceSolutionKey: { type: "hangoutsMeet" },
         },
       },
-      attendees: [
-        { email: eventData.email_owner }, // jika ada email owner
-      ],
+      attendees: [{ email: eventData.email_owner }],
     };
 
     console.log(
@@ -118,184 +116,175 @@ export async function POST(request: Request) {
   try {
     const formInput = await request.json();
 
-    // 1. Debugging Header
-    const authHeader = request.headers.get("Authorization");
-    console.log(
-      "Authorization Header Diterima:",
-      authHeader ? `${authHeader.substring(0, 25)}...` : "KOSONG"
-    );
+    console.log("📥 Data diterima dari client:", {
+      tanggal_instalasi: formInput.tanggal_instalasi,
+      pukul_instalasi: formInput.pukul_instalasi,
+      nama_outlet: formInput.nama_outlet,
+      tipe_outlet: formInput.tipe_outlet,
+      has_google_token: !!formInput.google_access_token,
+    });
 
+    // Authorization check
+    const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "Authorization header required (Bearer token)" },
+        { error: "Authorization header required" },
         { status: 401 }
       );
     }
 
-    // 2. Extract token
     const token = authHeader.replace("Bearer ", "");
 
-    // 3. Create Supabase client with service role key
+    // Supabase client
     const supabaseServer = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
+        auth: { persistSession: false },
       }
     );
 
-    // 4. Verify the token and get user
-    console.log("👤 Verifying token...");
+    console.log("🔍 Verifying user token...");
+
+    // Verify user
     const {
       data: { user },
       error: userError,
     } = await supabaseServer.auth.getUser(token);
 
-    if (userError) {
-      console.error("❌ Token verification failed:", userError.message);
+    if (userError || !user) {
+      console.error("❌ Token verification failed:", userError);
       return NextResponse.json(
-        { error: "Invalid token: " + userError.message },
-        { status: 401 }
-      );
-    }
-
-    if (!user) {
-      console.error("❌ No user found for token");
-      return NextResponse.json(
-        { error: "User not found. Token may be expired." },
+        { error: "Authentication failed" },
         { status: 401 }
       );
     }
 
     console.log("✅ User verified:", user.email);
-
-    // 5. Create Google Calendar Event for BOTH online and offline
-    console.log(
-      `📅 Creating Google Calendar Event for: ${formInput.tipe_outlet} schedule`
-    );
-
-    // DAPATKAN provider_token DARI CLIENT
-    const googleAccessToken = formInput.google_access_token;
-
-    if (!googleAccessToken) {
-      console.log("❌ No google_access_token provided");
-      return NextResponse.json(
-        {
-          error:
-            "Google access token not provided. Cannot create Google Calendar event.",
-        },
-        { status: 400 }
-      );
+    let hari_instalasi = formInput.hari_instalasi;
+    if (!hari_instalasi && formInput.tanggal_instalasi) {
+      const [year, month, day] = formInput.tanggal_instalasi
+        .split("-")
+        .map(Number);
+      const date = new Date(year, month - 1, day);
+      hari_instalasi = date.toLocaleDateString("id-ID", { weekday: "long" });
+      console.log("📅 Calculated hari_instalasi from date:", hari_instalasi);
     }
 
-    console.log("✅ Google Access Token provided by client");
-
-    const startTime = new Date(
-      `${formInput.tanggal_instalasi}T${formInput.pukul_instalasi}`
-    );
-    const durationMs = calculateDurationInMs(
-      formInput.tipe_langganan,
-      formInput.tipe_outlet
-    );
-    const endTime = new Date(startTime.getTime() + durationMs);
-
-    // Buat event data dasar untuk SEMUA tipe
-    const googleEvent: any = {
-      summary: `Instalasi Majoo: ${formInput.nama_outlet}`,
-      description: `Tipe: ${formInput.tipe_outlet} (${formInput.tipe_langganan})
-SCH Leads: ${formInput.sch_leads}
-Owner: ${formInput.nama_owner}
-No HP: ${formInput.no_telepon}
-Alamat: ${formInput.alamat || "-"}`,
-      start: { dateTime: startTime.toISOString(), timeZone: "Asia/Makassar" },
-      end: { dateTime: endTime.toISOString(), timeZone: "Asia/Makassar" },
+    const baseData = {
+      tanggal_instalasi: formInput.tanggal_instalasi,
+      pukul_instalasi: formInput.pukul_instalasi + ":00",
+      nama_outlet: formInput.nama_outlet,
+      nama_owner: formInput.nama_owner || null,
+      no_telepon: formInput.no_telepon || null,
+      no_invoice: formInput.no_invoice || null,
+      alamat: formInput.alamat || null,
+      tipe_langganan: formInput.tipe_langganan || null,
+      tipe_outlet: formInput.tipe_outlet || null,
+      sch_leads: formInput.sch_leads || null,
+      hari_instalasi: formInput.hari_instalasi || null,
+      link_meet: null,
+      google_event_id: null,
+      status: "terjadwal",
     };
 
-    // Hanya tambahkan conferenceData untuk jadwal ONLINE
-    if (formInput.tipe_outlet === "Online") {
-      googleEvent.conferenceData = {
-        createRequest: {
-          requestId: `meet-${Date.now()}-${Math.random()
-            .toString(36)
-            .substr(2, 9)}`,
-          conferenceSolutionKey: { type: "hangoutsMeet" },
-        },
-      };
-    }
+    console.log("💾 Data yang akan disimpan:", baseData);
 
-    let meetLink = "";
-    let googleEventId = "";
+    let meetLink = null;
+    let googleEventId = null;
 
-    try {
-      const googleResponse = await createGoogleCalendarEvent(
-        googleAccessToken,
-        {
-          ...formInput,
-          email_owner: user.email, // gunakan email dari user yang terverifikasi
-        }
-      );
+    if (formInput.google_access_token && formInput.tipe_outlet === "Online") {
+      try {
+        console.log("🌐 Creating Google Calendar Event...");
 
-      googleEventId = googleResponse.eventId;
+        const startTime = new Date(
+          `${formInput.tanggal_instalasi}T${formInput.pukul_instalasi}`
+        );
+        const durationMs = calculateDurationInMs(
+          formInput.tipe_langganan,
+          formInput.tipe_outlet
+        );
+        const endTime = new Date(startTime.getTime() + durationMs);
 
-      // Untuk online, dapatkan meetLink dari response
-      if (formInput.tipe_outlet === "Online") {
-        meetLink = googleResponse.meetLink || "";
-        console.log("✅ Google Calendar Event created with Meet:", meetLink);
-      } else {
-        console.log("✅ Google Calendar Event created for OFFLINE");
+        const googleResponse = await createGoogleCalendarEvent(
+          formInput.google_access_token,
+          {
+            ...formInput,
+            email_owner: user.email,
+          }
+        );
+
+        googleEventId = googleResponse.eventId;
+        meetLink = googleResponse.meetLink;
+
+        console.log("✅ Google Calendar Event created:", {
+          eventId: googleEventId,
+          meetLink: meetLink,
+        });
+
+        baseData.link_meet = meetLink;
+        baseData.google_event_id = googleEventId;
+      } catch (googleError) {
+        console.error(
+          "❌ Google Calendar error, but continuing without it:",
+          googleError
+        );
       }
-    } catch (googleError) {
-      console.error("❌ Google Calendar error:", googleError);
-      return NextResponse.json(
-        {
-          error:
-            "Failed to create Google Calendar event: " +
-            (googleError as Error).message,
-        },
-        { status: 500 }
-      );
     }
 
-    // 6. Save to database (both online and offline)
-    const dataToInsert = {
-      ...formInput,
-      link_meet: meetLink, // Untuk offline akan string kosong
-      google_event_id: googleEventId, // Untuk kedua tipe akan ada Google Event ID
-    };
-
-    // Hapus google_access_token dari data yang akan disimpan ke database
-    delete dataToInsert.google_access_token;
-
+    // Simpan ke database
     console.log("💾 Saving to database...");
-    const { data, error: insertError } = await supabaseServer
+
+    const { data: insertedData, error: insertError } = await supabaseServer
       .from("jadwal")
-      .insert([dataToInsert])
+      .insert([baseData])
       .select()
       .single();
 
     if (insertError) {
-      console.error("❌ Database insert error:", insertError);
-      throw insertError;
+      console.error("❌ Database insert error:", {
+        message: insertError.message,
+        details: insertError.details,
+        code: insertError.code,
+      });
+
+      // Coba tanpa .single()
+      const { data: multiData, error: multiError } = await supabaseServer
+        .from("jadwal")
+        .insert([baseData])
+        .select();
+
+      if (multiError) {
+        throw multiError;
+      }
+
+      console.log("✅ Data inserted (multiple):", multiData);
+      return NextResponse.json({
+        message: "Schedule created successfully!",
+        data: multiData?.[0],
+        googleEvent: googleEventId
+          ? { eventId: googleEventId, meetLink: meetLink }
+          : null,
+      });
     }
 
-    console.log(
-      `✅ SUCCESS: ${formInput.tipe_outlet} schedule saved with Google Calendar!`
-    );
+    console.log("✅ SUCCESS - Data inserted:", insertedData);
+
     return NextResponse.json({
-      message: `${formInput.tipe_outlet} schedule successfully created with Google Calendar!`,
-      data,
+      message: "Schedule successfully created!",
+      data: insertedData,
+      googleEvent: googleEventId
+        ? { eventId: googleEventId, meetLink: meetLink }
+        : null,
     });
   } catch (error: unknown) {
-    console.error("💥 Unexpected error in simpan-jadwal:", error);
-
-    let errorMessage = "Internal server error";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    console.error("💥 FINAL ERROR:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
 }

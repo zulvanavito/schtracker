@@ -113,10 +113,32 @@ export default function Home() {
     }));
   };
 
-  // handleDateChange
-  const handleDateChange = (date: Date | undefined) => {
-    setFormData((prev) => ({ ...prev, tanggal_instalasi: date }));
+  const getHariFromTanggal = (tanggal: string) => {
+    if (!tanggal) return "";
+    const [year, month, day] = tanggal.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString("id-ID", { weekday: "long" });
   };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      const hari = getHariFromTanggal(formattedDate);
+
+      setFormData((prev) => ({
+        ...prev,
+        tanggal_instalasi: date,
+        hari_instalasi: hari, // ISI OTOMATIS
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        tanggal_instalasi: undefined,
+        hari_instalasi: "",
+      }));
+    }
+  };
+  
 
   // handleTimeChange
   const handleTimeChange = (part: "hour" | "minute", value: string) => {
@@ -225,18 +247,16 @@ export default function Home() {
         throw new Error("Anda belum login. Silakan login terlebih dahulu.");
       }
 
-      // Siapkan data untuk dikirim
       const dataToSend: ApiFormData = {
         ...formData,
         tanggal_instalasi: format(formData.tanggal_instalasi, "yyyy-MM-dd"),
+        hari_instalasi: formData.hari_instalasi,
       };
 
-      // SELALU kirim google_access_token jika tersedia
       if (session.provider_token) {
         dataToSend.google_access_token = session.provider_token;
       }
 
-      // Kirim request ke API
       const response = await fetch("/api/simpan-jadwal", {
         method: "POST",
         headers: {
