@@ -91,6 +91,7 @@ const minutes = ["00", "15", "30", "45"];
 
 const localizer = momentLocalizer(moment);
 
+
 function calculateDurationInMs(item: Jadwal | EditFormData) {
   let durationHours = 0;
   const langganan = item.tipe_langganan
@@ -141,6 +142,7 @@ export default function HalamanJadwal() {
   const [selectedEvent, setSelectedEvent] = useState<Jadwal | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<EditFormData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function fetchJadwal() {
     setLoading(true);
@@ -149,8 +151,14 @@ export default function HalamanJadwal() {
       const response = await fetch("/api/get-jadwal", {
         cache: "no-store",
       });
+
       if (!response.ok) throw new Error("Gagal mengambil data jadwal");
-      const dataJadwal: Jadwal[] = await response.json();
+
+      const result = await response.json();
+      console.log("📋 Response from API:", result); // Debug log
+
+      // PERBAIKAN: Ambil data dari result.data, bukan result langsung
+      const dataJadwal: Jadwal[] = result.data || [];
 
       const formattedEvents = dataJadwal.map((item) => {
         const startDate = new Date(
@@ -165,8 +173,14 @@ export default function HalamanJadwal() {
           resource: item,
         };
       });
+
       setEvents(formattedEvents);
+      console.log(`✅ Formatted ${formattedEvents.length} events`);
     } catch (err: unknown) {
+      console.error("❌ Error in fetchJadwal:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown error occurred";
+      setError(errorMessage);
       if (err instanceof Error) {
         toast.error("Gagal mengambil data", { description: err.message });
       } else {
@@ -414,6 +428,23 @@ export default function HalamanJadwal() {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="flex items-center gap-2 text-red-800">
+              <X className="h-5 w-5" />
+              <span className="font-medium">Error: {error}</span>
+            </div>
+            <button
+              onClick={() => {
+                setError(null);
+                fetchJadwal();
+              }}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        )}
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
           <div className="space-y-3">

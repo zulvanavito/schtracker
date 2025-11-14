@@ -24,7 +24,7 @@ async function deleteGoogleCalendarEvent(accessToken: string, eventId: string) {
 
 export async function POST(request: Request) {
   try {
-    const { id, google_access_token } = await request.json(); // Terima google_access_token dari client
+    const { id, google_access_token } = await request.json();
 
     if (!id) {
       return NextResponse.json(
@@ -32,6 +32,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    console.log("🗑️ Mencoba menghapus jadwal dengan ID:", id);
 
     // 1. Dapatkan Authorization header
     const authHeader = request.headers.get("Authorization");
@@ -44,20 +46,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Buat client untuk auth dengan ANON_KEY
-    const authClient = createClient(
+    const token = authHeader.replace("Bearer ", "");
+
+    // 2. Buat client dengan service role key untuk bypass RLS
+    const supabaseServer = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
-        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false },
       }
     );
 
-    // 3. Dapatkan user (lebih reliable daripada session)
+    // 3. Verify user
     const {
       data: { user },
       error: userError,
-    } = await authClient.auth.getUser();
+    } = await supabaseServer.auth.getUser(token);
 
     if (userError || !user) {
       console.error("❌ Error mendapatkan user:", userError);
@@ -69,61 +73,72 @@ export async function POST(request: Request) {
 
     console.log("✅ User berhasil diverifikasi:", user.email);
 
-    // 4. Ambil data jadwal untuk mendapatkan google_event_id
-    const { data: jadwalData, error: fetchError } = await authClient
+    // 4. Ambil data jadwal SEBELUM dihapus - PERBAIKAN DI SINI
+    console.log("📋 Mengambil data jadwal sebelum dihapus...");
+
+    const { data: jadwalData, error: fetchError } = await supabaseServer
       .from("jadwal")
-      .select("google_event_id, tipe_outlet")
-      .eq("id", id)
-      .single();
+      .select("google_event_id, tipe_outlet, nama_outlet")
+      .eq("id", id);
 
     if (fetchError) {
-      console.warn(
-        "Gagal mengambil data sebelum dihapus, mungkin sudah terhapus:",
-        fetchError.message
-      );
+      console.error("❌ Gagal mengambil data jadwal:", fetchError);
+      // Lanjutkan saja, mungkin data sudah dihapus
     }
 
     console.log("📋 Data jadwal yang akan dihapus:", {
       id: id,
-      google_event_id: jadwalData?.google_event_id,
-      tipe_outlet: jadwalData?.tipe_outlet,
+      data: jadwalData,
+      count: jadwalData?.length || 0,
     });
 
+    // Handle jika data tidak ditemukan atau multiple records
+    let googleEventId = null;
+    if (jadwalData && jadwalData.length > 0) {
+      if (jadwalData.length === 1) {
+        googleEventId = jadwalData[0].google_event_id;
+        console.log("🔍 Google Event ID ditemukan:", googleEventId);
+      } else {
+        console.warn("⚠️ Multiple records found, using first one");
+        googleEventId = jadwalData[0].google_event_id;
+      }
+    } else {
+      console.log("ℹ️ Data jadwal tidak ditemukan, mungkin sudah dihapus");
+    }
+
     // 5. Hapus dari database
-    const { error: deleteError } = await authClient
+    console.log("🗑️ Menghapus dari database...");
+    const { error: deleteError } = await supabaseServer
       .from("jadwal")
       .delete()
       .eq("id", id);
 
     if (deleteError) {
       console.error("❌ Error menghapus dari database:", deleteError);
+
+      // Cek jika error karena data tidak ditemukan
+      if (deleteError.code === "PGRST116") {
+        console.log("ℹ️ Data sudah tidak ada di database");
+        return NextResponse.json({
+          message: "Jadwal sudah dihapus atau tidak ditemukan",
+        });
+      }
+
       throw deleteError;
     }
 
     console.log("✅ Berhasil menghapus jadwal dari database");
 
     // 6. Hapus dari Google Calendar HANYA jika ada google_event_id dan google_access_token
-    if (jadwalData && jadwalData.google_event_id) {
+    if (googleEventId) {
       if (google_access_token) {
         try {
-          console.log(
-            "🗑️ Menghapus event Google Calendar:",
-            jadwalData.google_event_id
-          );
-          await deleteGoogleCalendarEvent(
-            google_access_token,
-            jadwalData.google_event_id
-          );
+          console.log("🗑️ Menghapus event Google Calendar:", googleEventId);
+          await deleteGoogleCalendarEvent(google_access_token, googleEventId);
           console.log("✅ Event Google berhasil dihapus");
         } catch (googleError: unknown) {
           // Jangan gagalkan seluruh proses jika Google error
-          if (googleError instanceof Error) {
-            console.warn(
-              `⚠️ Gagal menghapus event Google: ${googleError.message}`
-            );
-          } else {
-            console.warn("⚠️ Gagal menghapus event Google (unknown error)");
-          }
+          console.warn("⚠️ Gagal menghapus event Google:", googleError);
         }
       } else {
         console.warn(
@@ -140,11 +155,13 @@ export async function POST(request: Request) {
       message: "Jadwal berhasil dihapus!",
     });
   } catch (error: unknown) {
+    console.error("❌ Error in /api/hapus-jadwal:", error);
+
     let errorMessage = "Terjadi kesalahan tidak diketahui";
     if (error instanceof Error) {
       errorMessage = error.message;
     }
-    console.error("❌ Error in /api/hapus-jadwal:", errorMessage);
+
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

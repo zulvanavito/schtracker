@@ -113,10 +113,32 @@ export default function Home() {
     }));
   };
 
-  // handleDateChange
-  const handleDateChange = (date: Date | undefined) => {
-    setFormData((prev) => ({ ...prev, tanggal_instalasi: date }));
+  const getHariFromTanggal = (tanggal: string) => {
+    if (!tanggal) return "";
+    const [year, month, day] = tanggal.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString("id-ID", { weekday: "long" });
   };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      const formattedDate = format(date, "yyyy-MM-dd");
+      const hari = getHariFromTanggal(formattedDate);
+
+      setFormData((prev) => ({
+        ...prev,
+        tanggal_instalasi: date,
+        hari_instalasi: hari, // ISI OTOMATIS
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        tanggal_instalasi: undefined,
+        hari_instalasi: "",
+      }));
+    }
+  };
+  
 
   // handleTimeChange
   const handleTimeChange = (part: "hour" | "minute", value: string) => {
@@ -225,18 +247,16 @@ export default function Home() {
         throw new Error("Anda belum login. Silakan login terlebih dahulu.");
       }
 
-      // Siapkan data untuk dikirim
       const dataToSend: ApiFormData = {
         ...formData,
         tanggal_instalasi: format(formData.tanggal_instalasi, "yyyy-MM-dd"),
+        hari_instalasi: formData.hari_instalasi,
       };
 
-      // SELALU kirim google_access_token jika tersedia
       if (session.provider_token) {
         dataToSend.google_access_token = session.provider_token;
       }
 
-      // Kirim request ke API
       const response = await fetch("/api/simpan-jadwal", {
         method: "POST",
         headers: {
@@ -293,7 +313,7 @@ export default function Home() {
     formData.pukul_instalasi.split(":");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
@@ -303,7 +323,7 @@ export default function Home() {
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Parser Jadwal
                 </h1>
                 <p className="text-muted-foreground text-lg">
@@ -363,7 +383,7 @@ export default function Home() {
             }`}
           >
             <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Sparkles className="h-5 w-5 text-blue-600" />
                   Langkah 1: Tempel Data Mentah
@@ -413,7 +433,7 @@ Langganan: Starter`}
               <CardFooter className="bg-slate-50/50 border-t px-6 py-4">
                 <Button
                   onClick={handleParse}
-                  className="w-full py-6 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
+                  className="w-full py-6 text-base font-semibold rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
                   disabled={!rawText.trim()}
                   size="lg"
                 >
@@ -432,7 +452,7 @@ Langganan: Starter`}
           >
             <form onSubmit={handleSubmit}>
               <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm h-full">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 border-b">
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                     Langkah 2: Verifikasi & Simpan
@@ -620,7 +640,7 @@ Langganan: Starter`}
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full py-6 text-base font-semibold rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/25"
+                    className="w-full py-6 text-base font-semibold rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/25"
                     disabled={isSubmitting || !formData.tanggal_instalasi}
                   >
                     <Save className="mr-2 h-5 w-5" />
