@@ -90,6 +90,32 @@ function formatTanggal(dateString: string) {
   });
 }
 
+// ✅ FUNGSI BARU: Normalisasi nomor telepon dari 08xxx ke +628xxx
+function normalizePhoneNumber(phone: string): string {
+  if (!phone) return "";
+
+  // Hapus semua karakter non-digit
+  const cleaned = phone.replace(/\D/g, "");
+
+  // Jika diawali dengan 0, ganti dengan +62
+  if (cleaned.startsWith("0")) {
+    return "+62" + cleaned.substring(1);
+  }
+
+  // Jika diawali dengan 62, tambahkan +
+  if (cleaned.startsWith("62")) {
+    return "+" + cleaned;
+  }
+
+  // Jika diawali dengan +, biarkan saja
+  if (cleaned.startsWith("+")) {
+    return phone;
+  }
+
+  // Default: tambahkan +62
+  return "+62" + cleaned;
+}
+
 export default function HalamanTabel() {
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,8 +238,14 @@ export default function HalamanTabel() {
         }
       }
 
+      // ✅ NORMALISASI NOMOR TELEPON di data yang diterima dari API
+      const normalizedData = dataJadwal.map((item) => ({
+        ...item,
+        no_telepon: normalizePhoneNumber(item.no_telepon),
+      }));
+
       // Validate each item has required properties
-      const validatedData = dataJadwal.filter(
+      const validatedData = normalizedData.filter(
         (item) => item && typeof item === "object" && item.id !== undefined
       );
 
@@ -342,6 +374,7 @@ export default function HalamanTabel() {
       return;
     }
 
+    // ✅ NOMOR TELEPON SUDAH DINORMALISASI, TINGGAL HAPUS KARAKTER NON-DIGIT UNTUK WHATSAPP
     const phoneNumber = selectedJadwal.no_telepon.replace(/\D/g, "");
 
     const encodedMessage = encodeURIComponent(generatedMessage);
