@@ -930,31 +930,34 @@ export default function HalamanJadwal() {
                     </div>
                   </div>
 
+                  {/* ✅ PERBAIKAN: DialogFooter dengan tampilan yang lebih responsif */}
                   <DialogFooter className="bg-slate-50/50 border-t p-6 rounded-b-2xl gap-3">
-                    <Button
-                      variant="destructive"
-                      onClick={handleDelete}
-                      className="gap-2 rounded-xl"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Hapus
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsEditing(true)}
-                      className="gap-2 rounded-xl"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Ubah
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={closeModal}
-                      className="gap-2 rounded-xl"
-                    >
-                      <X className="h-4 w-4" />
-                      Tutup
-                    </Button>
+                    <div className="flex gap-2 flex-wrap w-full justify-end">
+                      <Button
+                        variant="destructive"
+                        onClick={handleDelete}
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Hapus
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditing(true)}
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px]"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Ubah
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={closeModal}
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px]"
+                      >
+                        <X className="h-4 w-4" />
+                        Tutup
+                      </Button>
+                    </div>
                   </DialogFooter>
                 </>
               )}
