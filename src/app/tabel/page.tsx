@@ -38,6 +38,8 @@ import {
   Send,
   Filter,
   Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // Definisikan Tipe Data
@@ -61,6 +63,7 @@ interface Jadwal {
   hari_instalasi: string;
   link_meet: string;
   log_pesan: LogPesan[];
+  created_at?: string; // Tambahkan created_at untuk sorting
 }
 
 // Helper function untuk mengubah format SCH Leads menjadi format URL
@@ -90,6 +93,22 @@ function formatTanggal(dateString: string) {
   });
 }
 
+// ✅ FUNGSI BARU: Format waktu ke WITA (jam:menit WITA)
+function formatWaktuWITA(waktuString: string): string {
+  if (!waktuString) return "";
+
+  // Jika waktu sudah mengandung WITA, langsung return
+  if (waktuString.includes("WITA")) return waktuString;
+
+  // Extract jam dan menit saja, tambahkan WITA
+  const waktuParts = waktuString.split(":");
+  if (waktuParts.length >= 2) {
+    return `${waktuParts[0]}:${waktuParts[1]} WITA`;
+  }
+
+  return waktuString + " WITA";
+}
+
 // ✅ FUNGSI BARU: Normalisasi nomor telepon dari 08xxx ke +628xxx
 function normalizePhoneNumber(phone: string): string {
   if (!phone) return "";
@@ -116,6 +135,103 @@ function normalizePhoneNumber(phone: string): string {
   return "+62" + cleaned;
 }
 
+// ✅ KOMPONEN PAGINATION BARU
+function Pagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+  totalItems,
+  itemsPerPage,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  totalItems: number;
+  itemsPerPage: number;
+}) {
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 border-t">
+      <div className="text-sm text-muted-foreground">
+        Menampilkan {startItem}-{endItem} dari {totalItems} jadwal
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="gap-1"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Sebelumnya
+        </Button>
+
+        <div className="flex items-center gap-1">
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            // Logic untuk menampilkan page numbers dengan ellipsis
+            let pageNum: number | string = i + 1;
+
+            if (totalPages > 5) {
+              if (currentPage <= 3) {
+                pageNum = i + 1;
+                if (i === 4) pageNum = "...";
+                if (i === 5) pageNum = totalPages;
+              } else if (currentPage >= totalPages - 2) {
+                if (i === 0) pageNum = 1;
+                if (i === 1) pageNum = "...";
+                pageNum = totalPages - 4 + i;
+              } else {
+                if (i === 0) pageNum = 1;
+                if (i === 1) pageNum = "...";
+                if (i === 2) pageNum = currentPage - 1;
+                if (i === 3) pageNum = currentPage;
+                if (i === 4) pageNum = currentPage + 1;
+                if (i === 5) pageNum = "...";
+                if (i === 6) pageNum = totalPages;
+              }
+            }
+
+            if (pageNum === "...") {
+              return (
+                <span key={i} className="px-2 py-1 text-muted-foreground">
+                  ...
+                </span>
+              );
+            }
+
+            return (
+              <Button
+                key={i}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
+                onClick={() => onPageChange(pageNum as number)}
+                className="w-8 h-8 p-0"
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="gap-1"
+        >
+          Selanjutnya
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function HalamanTabel() {
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +239,11 @@ export default function HalamanTabel() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [filterTipe, setFilterTipe] = useState<string>("semua");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"terbaru" | "tanggal">("terbaru"); // ✅ STATE SORTING BARU
+
+  // ✅ STATE PAGINATION BARU
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   const [selectedJadwal, setSelectedJadwal] = useState<Jadwal | null>(null);
   const [generatedMessage, setGeneratedMessage] = useState("");
@@ -155,6 +276,30 @@ export default function HalamanTabel() {
         );
       })
     : [];
+
+  // ✅ SORTING DATA
+  const sortedJadwal = [...filteredJadwal].sort((a, b) => {
+    if (sortBy === "terbaru") {
+      // Urutkan berdasarkan ID descending (asumsi ID auto increment, jadi terbaru = ID lebih besar)
+      return b.id - a.id;
+    } else {
+      // Urutkan berdasarkan tanggal instalasi
+      const dateA = new Date(a.tanggal_instalasi);
+      const dateB = new Date(b.tanggal_instalasi);
+      return dateA.getTime() - dateB.getTime();
+    }
+  });
+
+  // ✅ PAGINATION LOGIC
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedJadwal.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedJadwal.length / itemsPerPage);
+
+  // Reset ke page 1 ketika filter/search/sort berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterTipe, searchQuery, sortBy]);
 
   const checkAndRefreshSession = async () => {
     try {
@@ -296,25 +441,27 @@ export default function HalamanTabel() {
       alamat,
     } = selectedJadwal;
     const tanggalFormatted = formatTanggal(tanggal_instalasi);
+    // ✅ GUNAKAN FORMAT WITA YANG BARU
+    const waktuFormatted = formatWaktuWITA(pukul_instalasi);
 
     switch (type) {
       case "online_reminder_awal":
-        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\n\nSeluruh rangkaian aktivitas akan dilakukan secara ONLINE melalui Google Meet.\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwal ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
+        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${waktuFormatted}\nOutlet : ${nama_outlet}\n\nSeluruh rangkaian aktivitas akan dilakukan secara ONLINE melalui Google Meet.\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwal ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
         break;
       case "online_konfirmasi_jadwal":
-        template = `Halo majoopreneurs!\nTerima kasih telah melakukan konfirmasi jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nLink Google Meet : ${link_meet}\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nPerubahan jadwal dapat dilakukan selambat-latnya dalam 2x24 jam. Di luar itu, akan dikenakan biaya tambahan sebesar Rp50.000. Training tambahan dapat dilakukan dengan membeli sesi training sebesar Rp250.000/sesi selama 3 Jam. Untuk permintaan penjadwalan ulang, kakak dapat menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only). Terima kasih, Have a nice day ^^`;
+        template = `Halo majoopreneurs!\nTerima kasih telah melakukan konfirmasi jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${waktuFormatted}\nOutlet : ${nama_outlet}\nLink Google Meet : ${link_meet}\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nPerubahan jadwal dapat dilakukan selambat-latnya dalam 2x24 jam. Di luar itu, akan dikenakan biaya tambahan sebesar Rp50.000. Training tambahan dapat dilakukan dengan membeli sesi training sebesar Rp250.000/sesi selama 3 Jam. Untuk permintaan penjadwalan ulang, kakak dapat menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only). Terima kasih, Have a nice day ^^`;
         break;
       case "online_h1_reminder":
-        template = `Halo majoopreneurs!\nIzin melakukan reminder jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nLink Google Meet : ${link_meet}\n\nSebelum menjalani sesi training, berikut hal-hal yang perlu diperhatikan:\n✅ Tim majoo akan menjelaskan fitur lengkap yang ada di aplikasi majoo\n✅ Dipersilakan untuk bertanya jika terdapat informasi yang belum jelas\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nTerima kasih, Have a nice day!`;
+        template = `Halo majoopreneurs!\nIzin melakukan reminder jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${waktuFormatted}\nOutlet : ${nama_outlet}\nLink Google Meet : ${link_meet}\n\nSebelum menjalani sesi training, berikut hal-hal yang perlu diperhatikan:\n✅ Tim majoo akan menjelaskan fitur lengkap yang ada di aplikasi majoo\n✅ Dipersilakan untuk bertanya jika terdapat informasi yang belum jelas\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nTerima kasih, Have a nice day!`;
         break;
       case "offline_reminder_awal":
-        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwal ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
+        template = `Halo majoopreneurs!\nPerkenalkan saya dari Team Scheduler Majoo. Melalui pesan ini, saya ingin menginformasikan jadwal instalasi perangkat dan sesi training aplikasi Majoo oleh tim Customer Support Majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${waktuFormatted}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nMohon konfirmasinya apakah BERSEDIA/TIDAK sesuai waktu diatas, Terima kasih\n\nSilakan melakukan konfirmasi dalam 1x12 jam dengan membalas pesan ini. Di luar itu, maka jadwal training dianggap batal. Penjadwal ulang dapat dilakukan dengan menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only).`;
         break;
       case "offline_konfirmasi_jadwal":
-        template = `Halo majoopreneurs!\nTerima kasih telah melakukan konfirmasi jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nPerubahan jadwal dapat dilakukan selambat-latnya dalam 2x24 jam. Di luar itu, akan dikenakan biaya tambahan sebesar Rp50.000. Training tambahan dapat dilakukan dengan membeli sesi training sebesar Rp250.000/sesi selama 3 Jam. Untuk permintaan penjadwalan ulang, kakak dapat menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only). Terima kasih, Have a nice day ^^`;
+        template = `Halo majoopreneurs!\nTerima kasih telah melakukan konfirmasi jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${waktuFormatted}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nPerubahan jadwal dapat dilakukan selambat-latnya dalam 2x24 jam. Di luar itu, akan dikenakan biaya tambahan sebesar Rp50.000. Training tambahan dapat dilakukan dengan membeli sesi training sebesar Rp250.000/sesi selama 3 Jam. Untuk permintaan penjadwalan ulang, kakak dapat menghubungi nomor ini atau hotline majoo di 0811500460 (Chat WA Only). Terima kasih, Have a nice day ^^`;
         break;
       case "offline_h1_reminder":
-        template = `Halo majoopreneurs!\nIzin melakukan reminder jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${pukul_instalasi}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nSebelum menjalani sesi training, berikut hal-hal yang perlu diperhatikan:\n✅ Tim majoo akan menjelaskan fitur lengkap yang ada di aplikasi majoo\n✅ Dipersilakan untuk bertanya jika terdapat informasi yang belum jelas\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nTerima kasih, Have a nice day!`;
+        template = `Halo majoopreneurs!\nIzin melakukan reminder jadwal instalasi perangkat dan sesi training aplikasi majoo pada:\n\nHari : ${hari_instalasi}\nTanggal : ${tanggalFormatted}\nPukul : ${waktuFormatted}\nOutlet : ${nama_outlet}\nAlamat : ${alamat}\n\nSebelum menjalani sesi training, berikut hal-hal yang perlu diperhatikan:\n✅ Tim majoo akan menjelaskan fitur lengkap yang ada di aplikasi majoo\n✅ Dipersilakan untuk bertanya jika terdapat informasi yang belum jelas\n\nKami berharap sesi dapat dimulai tepat waktu, karena kami akan mulai sesuai dengan jadwal yang ditentukan. Waktu training akan terhitung dari jadwal dan jam yang sudah terkonfirmasi. Keterlambatan sesi training tidak mendapatkan jam tambahan dikarenakan kami sudah memiliki jadwal ke merchant lainnya.\n\nMohon untuk mempersiapkan data berikut untuk mempermudah proses registrasi saat sesi training berlangsung:\n✅ KTP\n✅ NPWP\n✅ Nomor Rekening Settlement\n\nTerima kasih, Have a nice day!`;
         break;
       case "no_respond_cancel":
         template = `Halo majooprenuers!\nDikarenakan tidak ada konfirmasi lagi dari penjadwal training, mohon maaf untuk tiket penjadwalan diatas kami tutup. Jika Kakak sudah siap dan bersedia untuk melakukan training silakan Chat dan konfirmasi kembali ke nomor ini atau Whatsapp Hotline kami di 0811500460 dan bisa juga menghubungi kami di 1500460 dengan estimasi waktu H-7 dari tanggal request training, terima kasih`;
@@ -549,7 +696,7 @@ export default function HalamanTabel() {
           </div>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar dan Sorting */}
         <div className="mb-6">
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0 p-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -577,12 +724,31 @@ export default function HalamanTabel() {
                   Alamat, Tipe Langganan, Hari Instalasi
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {/* ✅ SORTING OPTION */}
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="sort" className="text-sm whitespace-nowrap">
+                    Urutkan:
+                  </Label>
+                  <select
+                    id="sort"
+                    value={sortBy}
+                    onChange={(e) =>
+                      setSortBy(e.target.value as "terbaru" | "tanggal")
+                    }
+                    className="rounded-xl border-2 border-slate-200 px-3 py-2 text-sm focus:border-blue-300 focus:ring-0"
+                  >
+                    <option value="terbaru">Terbaru Ditambahkan</option>
+                    <option value="tanggal">Berdasarkan Tanggal</option>
+                  </select>
+                </div>
+
                 <Button
                   variant="outline"
                   onClick={() => {
                     setSearchQuery("");
                     setFilterTipe("semua");
+                    setSortBy("terbaru");
                   }}
                   className="rounded-xl"
                 >
@@ -606,7 +772,7 @@ export default function HalamanTabel() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600" />
-                Daftar Semua Jadwal ({filteredJadwal.length})
+                Daftar Semua Jadwal ({sortedJadwal.length})
                 {searchQuery && (
                   <span className="text-sm font-normal text-muted-foreground">
                     • Hasil pencarian: "{searchQuery}"
@@ -614,8 +780,10 @@ export default function HalamanTabel() {
                 )}
               </h2>
               <div className="text-sm text-muted-foreground">
-                Menampilkan {filteredJadwal.length} dari {jadwalList.length}{" "}
-                jadwal
+                {/* ✅ INFO PAGINATION DI HEADER */}
+                Menampilkan {Math.min(currentItems.length, itemsPerPage)} jadwal
+                {sortBy === "terbaru" && " • Terbaru ditambahkan"}
+                {sortBy === "tanggal" && " • Diurutkan berdasarkan tanggal"}
               </div>
             </div>
           </div>
@@ -666,8 +834,8 @@ export default function HalamanTabel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredJadwal.length > 0 ? (
-                  filteredJadwal.map((item) => {
+                {currentItems.length > 0 ? (
+                  currentItems.map((item) => {
                     const schLeadsUrl = formatSchLeadsToUrl(item.sch_leads);
 
                     return (
@@ -692,7 +860,8 @@ export default function HalamanTabel() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3 text-muted-foreground" />
-                            {item.pukul_instalasi}
+                            {/* ✅ TAMPILKAN WAKTU DENGAN FORMAT WITA */}
+                            {formatWaktuWITA(item.pukul_instalasi)}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -816,12 +985,24 @@ export default function HalamanTabel() {
               </TableBody>
             </Table>
           </div>
+
+          {/* ✅ PAGINATION KOMPONEN */}
+          {sortedJadwal.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={sortedJadwal.length}
+              itemsPerPage={itemsPerPage}
+            />
+          )}
         </div>
 
         {/* Modal Buat Pesan */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           {selectedJadwal && (
-            <DialogContent className="sm:max-w-4xl rounded-2xl border-0 shadow-2xl">
+            <DialogContent className="sm:max-w-4xl rounded-2xl border-0 shadow-2xl mx-4 my-6 max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Header dengan padding yang cukup */}
               <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
                 <DialogTitle className="flex items-center gap-2 text-xl">
                   <MessageSquare className="h-5 w-5 text-blue-600" />
@@ -843,7 +1024,8 @@ export default function HalamanTabel() {
                 </p>
               </DialogHeader>
 
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Konten utama dengan scroll dan padding */}
+              <div className="p-6 space-y-6 overflow-y-auto flex-1">
                 {/* Template Selection */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-lg flex items-center gap-2 text-slate-700">
@@ -951,13 +1133,14 @@ export default function HalamanTabel() {
                 )}
               </div>
 
+              {/* Footer dengan padding yang cukup */}
               <DialogFooter className="bg-slate-50/50 border-t p-6 rounded-b-2xl gap-3">
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap w-full justify-end">
                   <Button
                     onClick={copyToClipboard}
                     disabled={!generatedMessage}
                     variant="outline"
-                    className="gap-2 rounded-xl"
+                    className="gap-2 rounded-xl whitespace-nowrap min-w-[120px]"
                   >
                     <Copy className="h-4 w-4" />
                     Salin Teks
@@ -965,7 +1148,7 @@ export default function HalamanTabel() {
                   <Button
                     onClick={sendToWhatsApp}
                     disabled={!generatedMessage || !selectedJadwal?.no_telepon}
-                    className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 whitespace-nowrap min-w-[140px]"
                   >
                     <Send className="h-4 w-4" />
                     Kirim WhatsApp

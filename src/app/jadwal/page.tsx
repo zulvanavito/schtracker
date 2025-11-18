@@ -45,6 +45,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+// (Interface Tipe Data Anda: LogPesan, Jadwal, EditFormData)
 interface LogPesan {
   id: number;
   created_at: string;
@@ -82,6 +83,30 @@ interface EditFormData {
   pukul_instalasi?: string;
   link_meet?: string;
   google_event_id?: string;
+}
+
+// Interface untuk request body
+interface DeleteRequestBody {
+  id: number;
+  google_access_token?: string;
+}
+
+interface UpdateRequestBody {
+  id?: number;
+  nama_outlet?: string;
+  nama_owner?: string;
+  no_telepon?: string;
+  no_invoice?: string;
+  sch_leads?: string;
+  alamat?: string;
+  tipe_outlet?: string;
+  tipe_langganan?: string;
+  hari_instalasi?: string;
+  tanggal_instalasi?: string;
+  pukul_instalasi?: string;
+  link_meet?: string;
+  google_event_id?: string;
+  google_access_token?: string;
 }
 
 const hours = Array.from({ length: 24 }, (_, i) =>
@@ -235,7 +260,7 @@ export default function HalamanJadwal() {
           if (sessionError) throw sessionError;
           if (!session) throw new Error("Anda tidak terautentikasi.");
 
-          const requestBody: any = {
+          const requestBody: DeleteRequestBody = {
             id: selectedEvent.id,
           };
 
@@ -360,19 +385,32 @@ export default function HalamanJadwal() {
             "google_event_id",
           ];
 
-          const filteredData: any = {};
+          const filteredData: Partial<UpdateRequestBody> = {};
           validFields.forEach((field) => {
-            if (editFormData[field as keyof EditFormData] !== undefined) {
-              filteredData[field] = editFormData[field as keyof EditFormData];
+            const value = editFormData[field as keyof EditFormData];
+            if (value !== undefined) {
+              if (field === "tanggal_instalasi") {
+                // Skip, will handle separately
+              } else {
+                filteredData[field as keyof UpdateRequestBody] = value as
+                  | string
+                  | number
+                  | undefined;
+              }
             }
           });
 
-          filteredData.tanggal_instalasi = format(
-            editFormData.tanggal_instalasi,
-            "yyyy-MM-dd"
-          );
+          // Handle tanggal_instalasi separately with proper type checking
+          if (editFormData.tanggal_instalasi) {
+            filteredData.tanggal_instalasi = format(
+              editFormData.tanggal_instalasi,
+              "yyyy-MM-dd"
+            );
+          }
 
-          const requestBody: any = { ...filteredData };
+          const requestBody: UpdateRequestBody = {
+            ...filteredData,
+          } as UpdateRequestBody;
 
           if (session.provider_token) {
             requestBody.google_access_token = session.provider_token;
