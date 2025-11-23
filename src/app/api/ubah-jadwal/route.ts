@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -28,6 +29,24 @@ function calculateDurationInMs(tipe_langganan: string, tipe_outlet: string) {
     durationMs += 30 * 60 * 1000;
   }
   return durationMs;
+}
+
+// Helper function untuk format waktu dengan timezone fix
+function formatDateTimeForGoogle(date: string, time: string) {
+  // Asia/Makassar = UTC+8
+  const localDate = new Date(`${date}T${time}:00+08:00`);
+  return {
+    isoString: localDate.toISOString(),
+    timeZone: "Asia/Makassar",
+  };
+}
+
+// Helper function untuk menambah jam
+function addHours(time: string, hours: number): string {
+  const [hoursStr, minutesStr] = time.split(":");
+  let newHours = parseInt(hoursStr) + hours;
+  if (newHours >= 24) newHours -= 24;
+  return `${newHours.toString().padStart(2, "0")}:${minutesStr}`;
 }
 
 // Helper function untuk update Google Calendar event
@@ -112,7 +131,6 @@ export async function POST(request: Request) {
     console.log("✅ User berhasil diverifikasi:", user.email);
 
     // 4. FILTER DATA: Hanya ambil field yang valid untuk tabel jadwal
-    // Berdasarkan struktur tabel yang Anda berikan
     const validFields = [
       "nama_outlet",
       "nama_owner",
@@ -178,27 +196,39 @@ export async function POST(request: Request) {
       try {
         console.log("📅 Mengupdate event Google Calendar:", google_event_id);
 
-        const startTime = new Date(
-          `${dataToUpdate.tanggal_instalasi}T${dataToUpdate.pukul_instalasi}`
+        // 🎯 PERBAIKAN TIMEZONE DI SINI - Gunakan fungsi formatDateTimeForGoogle
+        console.log("🕒 Data waktu sebelum update Google Calendar:", {
+          tanggal: dataToUpdate.tanggal_instalasi,
+          pukul: dataToUpdate.pukul_instalasi,
+          timezone: "Asia/Makassar",
+        });
+
+        const startTime = formatDateTimeForGoogle(
+          dataToUpdate.tanggal_instalasi,
+          dataToUpdate.pukul_instalasi
         );
-        const durationMs = calculateDurationInMs(
-          dataToUpdate.tipe_langganan,
-          dataToUpdate.tipe_outlet
+        const endTime = formatDateTimeForGoogle(
+          dataToUpdate.tanggal_instalasi,
+          addHours(dataToUpdate.pukul_instalasi, 2)
         );
-        const endTime = new Date(startTime.getTime() + durationMs);
 
         const googleEvent = {
           summary: `Instalasi Majoo: ${dataToUpdate.nama_outlet}`,
           description: `SCH Leads: ${dataToUpdate.sch_leads}\nOwner: ${dataToUpdate.nama_owner}\nNo HP: ${dataToUpdate.no_telepon}\nTipe: ${dataToUpdate.tipe_outlet} (${dataToUpdate.tipe_langganan})`,
           start: {
-            dateTime: startTime.toISOString(),
-            timeZone: "Asia/Makassar",
+            dateTime: startTime.isoString,
+            timeZone: startTime.timeZone,
           },
           end: {
-            dateTime: endTime.toISOString(),
-            timeZone: "Asia/Makassar",
+            dateTime: endTime.isoString,
+            timeZone: endTime.timeZone,
           },
         };
+
+        console.log(
+          "📤 Update event data ke Google:",
+          JSON.stringify(googleEvent, null, 2)
+        );
 
         await updateGoogleCalendarEvent(
           google_access_token,
@@ -208,7 +238,6 @@ export async function POST(request: Request) {
 
         console.log("✅ Event Google berhasil diupdate");
       } catch (googleError: unknown) {
-        // Jangan gagalkan seluruh proses jika Google error
         if (googleError instanceof Error) {
           console.warn(
             `⚠️ Gagal mengupdate event Google: ${googleError.message}`
