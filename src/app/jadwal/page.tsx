@@ -116,7 +116,6 @@ const minutes = ["00", "15", "30", "45"];
 
 const localizer = momentLocalizer(moment);
 
-
 function calculateDurationInMs(item: Jadwal | EditFormData) {
   let durationHours = 0;
   const langganan = item.tipe_langganan
@@ -650,22 +649,22 @@ export default function HalamanJadwal() {
         </div>
       </div>
 
-      {/* Modal Detail & Edit */}
+      {/* Modal Detail & Edit - PERBAIKAN UTAMA DI SINI */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-3xl rounded-2xl border-0 shadow-2xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-3xl rounded-2xl border-0 shadow-2xl max-h-[85vh] overflow-hidden mx-4 my-8 flex flex-col">
           {selectedEvent && (
             <>
               {isEditing ? (
                 // MODE EDIT
-                <form onSubmit={handleUpdateSubmit}>
-                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                <form onSubmit={handleUpdateSubmit} className="flex flex-col h-full">
+                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl flex-shrink-0">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                       <Edit className="h-5 w-5 text-blue-600" />
                       Ubah Jadwal
                     </DialogTitle>
                   </DialogHeader>
 
-                  <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                  <div className="p-6 space-y-6 overflow-y-auto flex-1">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <FormInput
@@ -822,29 +821,31 @@ export default function HalamanJadwal() {
                     </div>
                   </div>
 
-                  <DialogFooter className="bg-slate-50/50 border-t p-6 rounded-b-2xl gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                      className="gap-2 rounded-xl"
-                    >
-                      <X className="h-4 w-4" />
-                      Batal
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Simpan Perubahan
-                    </Button>
+                  <DialogFooter className="bg-slate-50/50 border-t p-4 rounded-b-2xl gap-2 flex-shrink-0">
+                    <div className="flex gap-2 flex-wrap w-full justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsEditing(false)}
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px] px-4 py-2 text-sm"
+                      >
+                        <X className="h-4 w-4" />
+                        Batal
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 whitespace-nowrap min-w-[120px] px-4 py-2 text-sm"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Simpan
+                      </Button>
+                    </div>
                   </DialogFooter>
                 </form>
               ) : (
                 // MODE VIEW
                 <>
-                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl">
+                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl flex-shrink-0">
                     <DialogTitle className="flex items-center gap-2 text-xl">
                       <CalendarIcon className="h-5 w-5 text-blue-600" />
                       Detail Jadwal
@@ -865,7 +866,7 @@ export default function HalamanJadwal() {
                     </div>
                   </DialogHeader>
 
-                  <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+                  <div className="p-6 space-y-6 overflow-y-auto flex-1">
                     {/* Informasi Utama */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
@@ -968,13 +969,12 @@ export default function HalamanJadwal() {
                     </div>
                   </div>
 
-                  {/* ✅ PERBAIKAN: DialogFooter dengan tampilan yang lebih responsif */}
-                  <DialogFooter className="bg-slate-50/50 border-t p-6 rounded-b-2xl gap-3">
+                  <DialogFooter className="bg-slate-50/50 border-t p-4 rounded-b-2xl gap-2 flex-shrink-0">
                     <div className="flex gap-2 flex-wrap w-full justify-end">
                       <Button
                         variant="destructive"
                         onClick={handleDelete}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px]"
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[90px] px-3 py-2 text-sm"
                       >
                         <Trash2 className="h-4 w-4" />
                         Hapus
@@ -982,7 +982,7 @@ export default function HalamanJadwal() {
                       <Button
                         variant="outline"
                         onClick={() => setIsEditing(true)}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px]"
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[90px] px-3 py-2 text-sm"
                       >
                         <Edit className="h-4 w-4" />
                         Ubah
@@ -990,7 +990,7 @@ export default function HalamanJadwal() {
                       <Button
                         variant="secondary"
                         onClick={closeModal}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px]"
+                        className="gap-2 rounded-xl whitespace-nowrap min-w-[90px] px-3 py-2 text-sm"
                       >
                         <X className="h-4 w-4" />
                         Tutup
@@ -1090,4 +1090,39 @@ function FormInput({
       />
     </div>
   );
+}
+
+// Tambahkan CSS kustom untuk kalender
+const calendarStyles = `
+  .event-online {
+    background-color: #10b981 !important;
+    border-color: #059669 !important;
+  }
+  .event-offline {
+    background-color: #f59e0b !important;
+    border-color: #d97706 !important;
+  }
+  .rbc-event {
+    border-radius: 8px;
+    border: none;
+    padding: 2px 8px;
+    font-size: 0.875rem;
+  }
+  .rbc-today {
+    background-color: #eff6ff;
+  }
+  .rbc-header {
+    padding: 8px;
+    font-weight: 600;
+  }
+  .rbc-date-cell {
+    padding: 4px 8px;
+  }
+`;
+
+// Inject styles
+if (typeof document !== "undefined") {
+  const styleSheet = document.createElement("style");
+  styleSheet.innerText = calendarStyles;
+  document.head.appendChild(styleSheet);
 }
