@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -238,6 +237,7 @@ export async function POST(request: Request) {
 
         console.log("✅ Event Google berhasil diupdate");
       } catch (googleError: unknown) {
+        // Jangan gagalkan seluruh proses jika Google error
         if (googleError instanceof Error) {
           console.warn(
             `⚠️ Gagal mengupdate event Google: ${googleError.message}`
