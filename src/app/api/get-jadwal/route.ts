@@ -7,6 +7,18 @@ export async function GET(request: Request) {
   try {
     console.log("🔍 GET /api/get-jadwal called");
 
+    // Dapatkan query parameters untuk filtering
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const tanggal = searchParams.get("tanggal");
+    const tipe_outlet = searchParams.get("tipe_outlet");
+
+    console.log("📋 Query parameters:", {
+      status,
+      tanggal,
+      tipe_outlet,
+    });
+
     // Create Supabase client dengan service role key
     const supabaseServer = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,9 +30,24 @@ export async function GET(request: Request) {
 
     console.log("📋 Fetching jadwal data...");
 
-    const { data: jadwalData, error: fetchError } = await supabaseServer
-      .from("jadwal")
-      .select("*")
+    // Buat query dasar
+    let query = supabaseServer.from("jadwal").select("*");
+
+    // Tambahkan filter berdasarkan query parameters
+    if (status && status !== "all") {
+      query = query.eq("status", status);
+    }
+
+    if (tanggal) {
+      query = query.eq("tanggal_instalasi", tanggal);
+    }
+
+    if (tipe_outlet && tipe_outlet !== "all") {
+      query = query.eq("tipe_outlet", tipe_outlet);
+    }
+
+    // Eksekusi query dengan sorting
+    const { data: jadwalData, error: fetchError } = await query
       .order("tanggal_instalasi", { ascending: true })
       .order("pukul_instalasi", { ascending: true });
 
@@ -32,12 +59,29 @@ export async function GET(request: Request) {
       );
     }
 
-    console.log(`✅ Successfully fetched ${jadwalData?.length || 0} records`);
+    // Log statistics
+    const stats = {
+      total: jadwalData?.length || 0,
+      online: jadwalData?.filter((j) => j.tipe_outlet === "Online").length || 0,
+      offline:
+        jadwalData?.filter((j) => j.tipe_outlet === "Offline").length || 0,
+      terjadwal:
+        jadwalData?.filter((j) => j.status === "terjadwal").length || 0,
+      selesai: jadwalData?.filter((j) => j.status === "selesai").length || 0,
+    };
+
+    console.log(`✅ Successfully fetched ${stats.total} records`, stats);
 
     return NextResponse.json({
       success: true,
       data: jadwalData || [],
-      count: jadwalData?.length || 0,
+      count: stats.total,
+      statistics: stats,
+      filters: {
+        status,
+        tanggal,
+        tipe_outlet,
+      },
     });
   } catch (error: unknown) {
     console.error("💥 Unexpected error in get-jadwal:", error);

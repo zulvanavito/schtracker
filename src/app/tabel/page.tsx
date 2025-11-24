@@ -93,14 +93,11 @@ function formatTanggal(dateString: string) {
   });
 }
 
-// ✅ FUNGSI BARU: Format waktu ke WITA (jam:menit WITA)
 function formatWaktuWITA(waktuString: string): string {
   if (!waktuString) return "";
 
-  // Jika waktu sudah mengandung WITA, langsung return
   if (waktuString.includes("WITA")) return waktuString;
 
-  // Extract jam dan menit saja, tambahkan WITA
   const waktuParts = waktuString.split(":");
   if (waktuParts.length >= 2) {
     return `${waktuParts[0]}:${waktuParts[1]} WITA`;
@@ -109,33 +106,26 @@ function formatWaktuWITA(waktuString: string): string {
   return waktuString + " WITA";
 }
 
-// ✅ FUNGSI BARU: Normalisasi nomor telepon dari 08xxx ke +628xxx
 function normalizePhoneNumber(phone: string): string {
   if (!phone) return "";
 
-  // Hapus semua karakter non-digit
   const cleaned = phone.replace(/\D/g, "");
 
-  // Jika diawali dengan 0, ganti dengan +62
   if (cleaned.startsWith("0")) {
     return "+62" + cleaned.substring(1);
   }
 
-  // Jika diawali dengan 62, tambahkan +
   if (cleaned.startsWith("62")) {
     return "+" + cleaned;
   }
 
-  // Jika diawali dengan +, biarkan saja
   if (cleaned.startsWith("+")) {
     return phone;
   }
 
-  // Default: tambahkan +62
   return "+62" + cleaned;
 }
 
-// ✅ KOMPONEN PAGINATION BARU
 function Pagination({
   currentPage,
   totalPages,
@@ -172,7 +162,6 @@ function Pagination({
 
         <div className="flex items-center gap-1">
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            // Logic untuk menampilkan page numbers dengan ellipsis
             let pageNum: number | string = i + 1;
 
             if (totalPages > 5) {
@@ -239,9 +228,8 @@ export default function HalamanTabel() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [filterTipe, setFilterTipe] = useState<string>("semua");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"terbaru" | "tanggal">("terbaru"); // ✅ STATE SORTING BARU
+  const [sortBy, setSortBy] = useState<"terbaru" | "tanggal">("terbaru");
 
-  // ✅ STATE PAGINATION BARU
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -250,15 +238,12 @@ export default function HalamanTabel() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Filter dengan search
   const filteredJadwal = Array.isArray(jadwalList)
     ? jadwalList.filter((jadwal) => {
-        // Filter berdasarkan tipe
         if (filterTipe !== "semua" && jadwal.tipe_outlet !== filterTipe) {
           return false;
         }
 
-        // Filter berdasarkan search query
         if (searchQuery.trim() === "") {
           return true;
         }
@@ -277,26 +262,21 @@ export default function HalamanTabel() {
       })
     : [];
 
-  // ✅ SORTING DATA
   const sortedJadwal = [...filteredJadwal].sort((a, b) => {
     if (sortBy === "terbaru") {
-      // Urutkan berdasarkan ID descending (asumsi ID auto increment, jadi terbaru = ID lebih besar)
       return b.id - a.id;
     } else {
-      // Urutkan berdasarkan tanggal instalasi
       const dateA = new Date(a.tanggal_instalasi);
       const dateB = new Date(b.tanggal_instalasi);
       return dateA.getTime() - dateB.getTime();
     }
   });
 
-  // ✅ PAGINATION LOGIC
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedJadwal.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(sortedJadwal.length / itemsPerPage);
 
-  // Reset ke page 1 ketika filter/search/sort berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [filterTipe, searchQuery, sortBy]);
@@ -365,7 +345,6 @@ export default function HalamanTabel() {
 
       let dataJadwal: Jadwal[] = [];
 
-      // Handle multiple possible response structures
       if (Array.isArray(result)) {
         dataJadwal = result;
       } else if (result.data && Array.isArray(result.data)) {
@@ -373,7 +352,6 @@ export default function HalamanTabel() {
       } else if (result.success && Array.isArray(result.data)) {
         dataJadwal = result.data;
       } else if (typeof result === "object" && result !== null) {
-        // Try to extract array from object values
         const values = Object.values(result);
         const arrayValue = values.find((val) => Array.isArray(val));
         if (arrayValue) {
@@ -383,13 +361,11 @@ export default function HalamanTabel() {
         }
       }
 
-      // ✅ NORMALISASI NOMOR TELEPON di data yang diterima dari API
       const normalizedData = dataJadwal.map((item) => ({
         ...item,
         no_telepon: normalizePhoneNumber(item.no_telepon),
       }));
 
-      // Validate each item has required properties
       const validatedData = normalizedData.filter(
         (item) => item && typeof item === "object" && item.id !== undefined
       );
@@ -411,7 +387,6 @@ export default function HalamanTabel() {
   }
 
   useEffect(() => {
-    // Check session pertama kali
     const initializeSession = async () => {
       await checkAndRefreshSession();
       setSessionChecked(true);
@@ -441,7 +416,7 @@ export default function HalamanTabel() {
       alamat,
     } = selectedJadwal;
     const tanggalFormatted = formatTanggal(tanggal_instalasi);
-    // ✅ GUNAKAN FORMAT WITA YANG BARU
+
     const waktuFormatted = formatWaktuWITA(pukul_instalasi);
 
     switch (type) {
@@ -473,7 +448,6 @@ export default function HalamanTabel() {
     setGeneratedMessage(template);
 
     try {
-      // Refresh session sebelum mengirim request
       const session = await checkAndRefreshSession();
 
       if (!session) {
@@ -521,7 +495,6 @@ export default function HalamanTabel() {
       return;
     }
 
-    // ✅ NOMOR TELEPON SUDAH DINORMALISASI, TINGGAL HAPUS KARAKTER NON-DIGIT UNTUK WHATSAPP
     const phoneNumber = selectedJadwal.no_telepon.replace(/\D/g, "");
 
     const encodedMessage = encodeURIComponent(generatedMessage);
@@ -549,7 +522,6 @@ export default function HalamanTabel() {
     );
   }
 
-  // Tampilkan error
   if (error) {
     return (
       <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8 flex items-center justify-center">
@@ -605,7 +577,6 @@ export default function HalamanTabel() {
           </div>
         </header>
 
-        {/* Stats dan Filter */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {/* Total Jadwal */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
@@ -622,7 +593,6 @@ export default function HalamanTabel() {
             </div>
           </div>
 
-          {/* Online */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
@@ -640,7 +610,6 @@ export default function HalamanTabel() {
             </div>
           </div>
 
-          {/* Offline */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-100 rounded-lg">

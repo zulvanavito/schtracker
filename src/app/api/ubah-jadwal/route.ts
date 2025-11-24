@@ -195,7 +195,7 @@ export async function POST(request: Request) {
       try {
         console.log("📅 Mengupdate event Google Calendar:", google_event_id);
 
-        // 🎯 PERBAIKAN TIMEZONE DI SINI - Gunakan fungsi formatDateTimeForGoogle
+        // 🎯 PERBAIKAN TIMEZONE DAN FORMAT - Gunakan fungsi formatDateTimeForGoogle
         console.log("🕒 Data waktu sebelum update Google Calendar:", {
           tanggal: dataToUpdate.tanggal_instalasi,
           pukul: dataToUpdate.pukul_instalasi,
@@ -211,9 +211,34 @@ export async function POST(request: Request) {
           addHours(dataToUpdate.pukul_instalasi, 2)
         );
 
+        const summary = `${dataToUpdate.nama_outlet} - Zulvan Avito - ${dataToUpdate.sch_leads}`;
+
+        const description = `
+Outlet: ${dataToUpdate.nama_outlet}
+Pemilik: ${dataToUpdate.nama_owner}
+Telepon: ${dataToUpdate.no_telepon}
+Alamat: ${dataToUpdate.alamat}
+
+Tipe Langganan: ${dataToUpdate.tipe_langganan}
+Tipe Outlet: ${dataToUpdate.tipe_outlet}
+SCH Leads: ${dataToUpdate.sch_leads}
+No. Invoice: ${dataToUpdate.no_invoice}
+
+Hari: ${dataToUpdate.hari_instalasi}
+Tanggal: ${dataToUpdate.tanggal_instalasi}
+Pukul: ${dataToUpdate.pukul_instalasi}
+
+${
+  dataToUpdate.tipe_outlet === "Online" && dataToUpdate.link_meet
+    ? `Link Meet: ${dataToUpdate.link_meet}`
+    : ""
+}
+        `.trim();
+
         const googleEvent = {
-          summary: `Instalasi Majoo: ${dataToUpdate.nama_outlet}`,
-          description: `SCH Leads: ${dataToUpdate.sch_leads}\nOwner: ${dataToUpdate.nama_owner}\nNo HP: ${dataToUpdate.no_telepon}\nTipe: ${dataToUpdate.tipe_outlet} (${dataToUpdate.tipe_langganan})`,
+          summary: summary,
+          description: description,
+          location: dataToUpdate.alamat,
           start: {
             dateTime: startTime.isoString,
             timeZone: startTime.timeZone,
@@ -222,6 +247,7 @@ export async function POST(request: Request) {
             dateTime: endTime.isoString,
             timeZone: endTime.timeZone,
           },
+          colorId: dataToUpdate.tipe_outlet === "Online" ? "2" : "4", // Sage untuk Online, Flamingo untuk Offline
         };
 
         console.log(
