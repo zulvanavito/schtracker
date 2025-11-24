@@ -82,18 +82,67 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Insert log message into database
-    console.log("💾 Saving to database...");
+    // 6. CEK DUPLIKAT: Cek apakah sudah ada log pesan dengan jadwal_id + tipe_pesan yang sama
+    console.log("🔍 Checking for duplicate log...");
+
+    const { data: existingLogs, error: checkError } = await supabaseServer
+      .from("log_pesan")
+      .select("id, created_at, isi_pesan")
+      .eq("jadwal_id", jadwal_id)
+      .eq("tipe_pesan", tipe_pesan)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (checkError) {
+      console.error("❌ Error checking duplicate:", checkError);
+      // Lanjutkan saja, jangan block karena error cek
+    }
+
+    // 7. Jika sudah ada log dengan jadwal_id + tipe_pesan yang sama, return existing log
+    if (existingLogs && existingLogs.length > 0) {
+      console.log("⏭️ Log pesan sudah ada untuk tipe ini, skip penyimpanan:", {
+        existing_log_id: existingLogs[0].id,
+        jadwal_id: jadwal_id,
+        tipe_pesan: tipe_pesan,
+        created_at: existingLogs[0].created_at,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Log pesan untuk tipe ini sudah ada, tidak disimpan duplikat",
+        skipped: true,
+        existing_log: existingLogs[0],
+        data: existingLogs[0], // Return existing data
+      });
+    }
+
+    // 8. Validasi tipe_pesan (optional enhancement)
+    const validTipePesan = [
+      "offline_hL_reminder",
+      "online_reminder_aval",
+      "konfirmasi",
+      "followup",
+      "system",
+      "other",
+    ];
+    if (!validTipePesan.includes(tipe_pesan)) {
+      console.warn(
+        `⚠️ Tipe pesan '${tipe_pesan}' tidak standar, tetap disimpan`
+      );
+    }
+
+    // 9. Insert log message into database - HANYA jika belum ada kombinasi jadwal_id + tipe_pesan
+    console.log("💾 Saving to database (no duplicate found)...");
+    const logData = {
+      jadwal_id: jadwal_id,
+      tipe_pesan: tipe_pesan,
+      isi_pesan: isi_pesan || null,
+      created_at: new Date().toISOString(),
+    };
+
     const { data, error: insertError } = await supabaseServer
       .from("log_pesan")
-      .insert([
-        {
-          jadwal_id: jadwal_id,
-          tipe_pesan: tipe_pesan,
-          isi_pesan: isi_pesan || null,
-          created_at: new Date().toISOString(),
-        },
-      ])
+      .insert([logData])
       .select()
       .single();
 
@@ -105,9 +154,13 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("✅ Log pesan berhasil disimpan! ID:", data.id);
+    console.log("✅ Log pesan berhasil disimpan!", {
+      log_id: data.id,
+      jadwal_id: data.jadwal_id,
+      tipe_pesan: data.tipe_pesan,
+    });
 
-    // 7. Return success response
+    // 10. Return success response
     return NextResponse.json({
       success: true,
       message: "Log pesan berhasil disimpan!",

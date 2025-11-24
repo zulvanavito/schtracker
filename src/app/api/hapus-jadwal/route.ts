@@ -73,12 +73,14 @@ export async function POST(request: Request) {
 
     console.log("✅ User berhasil diverifikasi:", user.email);
 
-    // 4. Ambil data jadwal SEBELUM dihapus - PERBAIKAN DI SINI
+    // 4. Ambil data jadwal SEBELUM dihapus
     console.log("📋 Mengambil data jadwal sebelum dihapus...");
 
     const { data: jadwalData, error: fetchError } = await supabaseServer
       .from("jadwal")
-      .select("google_event_id, tipe_outlet, nama_outlet")
+      .select(
+        "google_event_id, tipe_outlet, nama_outlet, nama_owner, sch_leads"
+      )
       .eq("id", id);
 
     if (fetchError) {
@@ -94,13 +96,28 @@ export async function POST(request: Request) {
 
     // Handle jika data tidak ditemukan atau multiple records
     let googleEventId = null;
+    let eventInfo = null;
+
     if (jadwalData && jadwalData.length > 0) {
       if (jadwalData.length === 1) {
         googleEventId = jadwalData[0].google_event_id;
+        eventInfo = {
+          nama_outlet: jadwalData[0].nama_outlet,
+          nama_owner: jadwalData[0].nama_owner,
+          sch_leads: jadwalData[0].sch_leads,
+          tipe_outlet: jadwalData[0].tipe_outlet,
+        };
         console.log("🔍 Google Event ID ditemukan:", googleEventId);
+        console.log("📝 Info event:", eventInfo);
       } else {
         console.warn("⚠️ Multiple records found, using first one");
         googleEventId = jadwalData[0].google_event_id;
+        eventInfo = {
+          nama_outlet: jadwalData[0].nama_outlet,
+          nama_owner: jadwalData[0].nama_owner,
+          sch_leads: jadwalData[0].sch_leads,
+          tipe_outlet: jadwalData[0].tipe_outlet,
+        };
       }
     } else {
       console.log("ℹ️ Data jadwal tidak ditemukan, mungkin sudah dihapus");
@@ -133,8 +150,15 @@ export async function POST(request: Request) {
     if (googleEventId) {
       if (google_access_token) {
         try {
-          console.log("🗑️ Menghapus event Google Calendar:", googleEventId);
+          console.log("🗑️ Menghapus event Google Calendar:", {
+            eventId: googleEventId,
+            outlet: eventInfo?.nama_outlet,
+            owner: eventInfo?.nama_owner,
+            sch_leads: eventInfo?.sch_leads,
+          });
+
           await deleteGoogleCalendarEvent(google_access_token, googleEventId);
+
           console.log("✅ Event Google berhasil dihapus");
         } catch (googleError: unknown) {
           // Jangan gagalkan seluruh proses jika Google error
@@ -153,6 +177,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: "Jadwal berhasil dihapus!",
+      deletedEvent: googleEventId
+        ? {
+            eventId: googleEventId,
+            outlet: eventInfo?.nama_outlet,
+            owner: eventInfo?.nama_owner,
+          }
+        : null,
     });
   } catch (error: unknown) {
     console.error("❌ Error in /api/hapus-jadwal:", error);

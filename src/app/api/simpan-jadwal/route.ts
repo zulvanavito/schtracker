@@ -30,26 +30,63 @@ function calculateDurationInMs(tipe_langganan: string, tipe_outlet: string) {
   return durationMs;
 }
 
+// Helper function untuk format waktu dengan timezone fix
+function formatDateTimeForGoogle(date: string, time: string) {
+  // Asia/Makassar = UTC+8
+  const localDate = new Date(`${date}T${time}:00+08:00`);
+  return {
+    isoString: localDate.toISOString(),
+    timeZone: 'Asia/Makassar'
+  };
+}
+
+// Helper function untuk menambah jam
+function addHours(time: string, hours: number): string {
+  const [hoursStr, minutesStr] = time.split(':');
+  let newHours = parseInt(hoursStr) + hours;
+  if (newHours >= 24) newHours -= 24;
+  return `${newHours.toString().padStart(2, '0')}:${minutesStr}`;
+}
+
 // Helper createGoogleCalendarEvent
 async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
   try {
+    // FORMAT BARU: "Nama outlet - nama lengkap - kode SCH"
+    const summary = `${eventData.nama_outlet} - Zulvan Avito - ${eventData.sch_leads}`;
+    
+    const description = `
+Outlet: ${eventData.nama_outlet}
+Pemilik: ${eventData.nama_owner}
+Telepon: ${eventData.no_telepon}
+Alamat: ${eventData.alamat}
+
+Tipe Langganan: ${eventData.tipe_langganan}
+Tipe Outlet: ${eventData.tipe_outlet}
+SCH Leads: ${eventData.sch_leads}
+No. Invoice: ${eventData.no_invoice}
+
+Hari: ${eventData.hari_instalasi}
+Tanggal: ${eventData.tanggal_instalasi}
+Pukul: ${eventData.pukul_instalasi}
+
+${eventData.tipe_outlet === 'Online' ? '🔗 Sesi Online via Google Meet' : '📍 Instalasi Offline'}
+    `.trim();
+
+    // Gunakan timezone fix
+    const startTime = formatDateTimeForGoogle(eventData.tanggal_instalasi, eventData.pukul_instalasi);
+    const endTime = formatDateTimeForGoogle(eventData.tanggal_instalasi, addHours(eventData.pukul_instalasi, 2));
+
     const event = {
-      summary: `Instalasi - ${eventData.nama_outlet}`,
-      description: `Jadwal instalasi untuk ${eventData.nama_outlet}\nPemilik: ${eventData.nama_owner}\nTelepon: ${eventData.no_telepon}`,
+      summary: summary,
+      description: description,
+      location: eventData.alamat,
       start: {
-        dateTime: new Date(
-          `${eventData.tanggal_instalasi}T${eventData.pukul_instalasi}:00`
-        ).toISOString(),
-        timeZone: "Asia/Jakarta",
+        dateTime: startTime.isoString,
+        timeZone: startTime.timeZone,
       },
       end: {
-        dateTime: new Date(
-          new Date(
-            `${eventData.tanggal_instalasi}T${eventData.pukul_instalasi}:00`
-          ).getTime() +
-            2 * 60 * 60 * 1000
-        ).toISOString(),
-        timeZone: "Asia/Jakarta",
+        dateTime: endTime.isoString,
+        timeZone: endTime.timeZone,
       },
       conferenceData: {
         createRequest: {
@@ -59,7 +96,7 @@ async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
           conferenceSolutionKey: { type: "hangoutsMeet" },
         },
       },
-      attendees: [{ email: eventData.email_owner }],
+      colorId: eventData.tipe_outlet === 'Online' ? '2' : '4', // Sage untuk Online, Flamingo untuk Offline
     };
 
     console.log(
@@ -124,7 +161,6 @@ export async function POST(request: Request) {
       has_google_token: !!formInput.google_access_token,
     });
 
-    // Authorization check
     const authHeader = request.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
@@ -196,15 +232,6 @@ export async function POST(request: Request) {
     if (formInput.google_access_token && formInput.tipe_outlet === "Online") {
       try {
         console.log("🌐 Creating Google Calendar Event...");
-
-        const startTime = new Date(
-          `${formInput.tanggal_instalasi}T${formInput.pukul_instalasi}`
-        );
-        const durationMs = calculateDurationInMs(
-          formInput.tipe_langganan,
-          formInput.tipe_outlet
-        );
-        const endTime = new Date(startTime.getTime() + durationMs);
 
         const googleResponse = await createGoogleCalendarEvent(
           formInput.google_access_token,
