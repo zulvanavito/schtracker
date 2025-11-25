@@ -36,24 +36,29 @@ function formatDateTimeForGoogle(date: string, time: string) {
   const localDate = new Date(`${date}T${time}:00+08:00`);
   return {
     isoString: localDate.toISOString(),
-    timeZone: 'Asia/Makassar'
+    timeZone: "Asia/Makassar",
   };
 }
 
 // Helper function untuk menambah jam
 function addHours(time: string, hours: number): string {
-  const [hoursStr, minutesStr] = time.split(':');
+  const [hoursStr, minutesStr] = time.split(":");
   let newHours = parseInt(hoursStr) + hours;
   if (newHours >= 24) newHours -= 24;
-  return `${newHours.toString().padStart(2, '0')}:${minutesStr}`;
+  return `${newHours.toString().padStart(2, "0")}:${minutesStr}`;
 }
 
-// Helper createGoogleCalendarEvent
+// Helper function untuk mendapatkan daftar guests - HANYA SATU EMAIL
+function getGuestEmails(instalasiData: any): string[] {
+  // HANYA satu email yang ditambahkan - zulvan.majoo@gmail.com
+  return ["zulvan.majoo@gmail.com"];
+}
+
+// Helper createGoogleCalendarEvent - DIMODIFIKASI dengan guests & labels
 async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
   try {
-    // FORMAT BARU: "Nama outlet - nama lengkap - kode SCH"
     const summary = `${eventData.nama_outlet} - Zulvan Avito Anwari - ${eventData.sch_leads}`;
-    
+
     const description = `
 Outlet: ${eventData.nama_outlet}
 Pemilik: ${eventData.nama_owner}
@@ -69,12 +74,33 @@ Hari: ${eventData.hari_instalasi}
 Tanggal: ${eventData.tanggal_instalasi}
 Pukul: ${eventData.pukul_instalasi}
 
-${eventData.tipe_outlet === 'Online' ? '🔗 Sesi Online via Google Meet' : '📍 Instalasi Offline'}
+${
+  eventData.tipe_outlet === "Online"
+    ? "🔗 Sesi Online via Google Meet"
+    : "📍 Instalasi Offline"
+}
     `.trim();
 
     // Gunakan timezone fix
-    const startTime = formatDateTimeForGoogle(eventData.tanggal_instalasi, eventData.pukul_instalasi);
-    const endTime = formatDateTimeForGoogle(eventData.tanggal_instalasi, addHours(eventData.pukul_instalasi, 2));
+    const startTime = formatDateTimeForGoogle(
+      eventData.tanggal_instalasi,
+      eventData.pukul_instalasi
+    );
+    const endTime = formatDateTimeForGoogle(
+      eventData.tanggal_instalasi,
+      addHours(eventData.pukul_instalasi, 2)
+    );
+
+    const colorId = "4";
+
+    // 👥 HANYA SATU GUEST - zulvan.majoo@gmail.com
+    const guestEmails = getGuestEmails(eventData);
+
+    const attendees = guestEmails.map((email) => ({
+      email: email,
+      displayName: "Zulvan Majoo", // Nama yang akan muncul di calendar
+      responseStatus: "accepted", // Langsung accepted karena ini Anda sendiri
+    }));
 
     const event = {
       summary: summary,
@@ -88,6 +114,21 @@ ${eventData.tipe_outlet === 'Online' ? '🔗 Sesi Online via Google Meet' : '�
         dateTime: endTime.isoString,
         timeZone: endTime.timeZone,
       },
+      // 🎨 DEFAULT: Color Flamingo untuk semua event
+      colorId: colorId,
+      // 👥 TAMBAHAN: Single Guest
+      attendees: attendees,
+      // 🔔 TAMBAHAN: Notifikasi
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "email", minutes: 24 * 60 }, // 1 hari sebelumnya
+          { method: "popup", minutes: 60 }, // 1 jam sebelumnya
+        ],
+      },
+      // 🎯 TAMBAHAN: Visibility settings
+      transparency: "opaque", // 'opaque' = busy, 'transparent' = free
+      visibility: "default",
       conferenceData: {
         createRequest: {
           requestId: `meet-${Date.now()}-${Math.random()
@@ -96,12 +137,21 @@ ${eventData.tipe_outlet === 'Online' ? '🔗 Sesi Online via Google Meet' : '�
           conferenceSolutionKey: { type: "hangoutsMeet" },
         },
       },
-      colorId: eventData.tipe_outlet === 'Online' ? '2' : '4', // Sage untuk Online, Flamingo untuk Offline
     };
 
     console.log(
-      "📨 Sending Google Calendar request:",
-      JSON.stringify(event, null, 2)
+      "📨 Sending Google Calendar request dengan guests & Flamingo color:",
+      JSON.stringify(
+        {
+          summary: event.summary,
+          colorId: event.colorId,
+          attendees: event.attendees,
+          timeZone: event.start.timeZone,
+          reminders: event.reminders,
+        },
+        null,
+        2
+      )
     );
 
     const response = await fetch(
@@ -126,8 +176,17 @@ ${eventData.tipe_outlet === 'Online' ? '🔗 Sesi Online via Google Meet' : '�
     }
 
     console.log(
-      "✅ Google Calendar Response:",
-      JSON.stringify(result, null, 2)
+      "✅ Google Calendar Response dengan guests & Flamingo color:",
+      JSON.stringify(
+        {
+          eventId: result.id,
+          colorId: result.colorId,
+          attendees: result.attendees,
+          hangoutLink: result.hangoutLink,
+        },
+        null,
+        2
+      )
     );
 
     // Extract Google Meet link dari response
@@ -137,11 +196,18 @@ ${eventData.tipe_outlet === 'Online' ? '🔗 Sesi Online via Google Meet' : '�
       )?.uri || result.hangoutLink;
 
     console.log("🔗 Google Meet Link:", meetLink);
+    console.log(
+      "👥 Guests yang diinvite:",
+      result.attendees?.map((a: any) => a.email)
+    );
+    console.log("🎨 ColorId yang digunakan:", result.colorId);
 
     return {
       eventId: result.id,
       meetLink: meetLink,
       htmlLink: result.htmlLink,
+      colorId: result.colorId,
+      attendees: result.attendees,
     };
   } catch (error) {
     console.error("❌ Google Calendar creation error:", error);
@@ -228,10 +294,14 @@ export async function POST(request: Request) {
 
     let meetLink = null;
     let googleEventId = null;
+    let calendarColorId = null;
+    let guestEmails = null;
 
     if (formInput.google_access_token && formInput.tipe_outlet === "Online") {
       try {
-        console.log("🌐 Creating Google Calendar Event...");
+        console.log(
+          "🌐 Creating Google Calendar Event dengan guests & Flamingo color..."
+        );
 
         const googleResponse = await createGoogleCalendarEvent(
           formInput.google_access_token,
@@ -243,10 +313,14 @@ export async function POST(request: Request) {
 
         googleEventId = googleResponse.eventId;
         meetLink = googleResponse.meetLink;
+        calendarColorId = googleResponse.colorId;
+        guestEmails = googleResponse.attendees?.map((a: any) => a.email);
 
-        console.log("✅ Google Calendar Event created:", {
+        console.log("✅ Google Calendar Event created dengan fitur baru:", {
           eventId: googleEventId,
           meetLink: meetLink,
+          colorId: calendarColorId,
+          guests: guestEmails,
         });
 
         baseData.link_meet = meetLink;
@@ -290,7 +364,12 @@ export async function POST(request: Request) {
         message: "Schedule created successfully!",
         data: multiData?.[0],
         googleEvent: googleEventId
-          ? { eventId: googleEventId, meetLink: meetLink }
+          ? {
+              eventId: googleEventId,
+              meetLink: meetLink,
+              colorId: calendarColorId,
+              guests: guestEmails,
+            }
           : null,
       });
     }
@@ -301,7 +380,12 @@ export async function POST(request: Request) {
       message: "Schedule successfully created!",
       data: insertedData,
       googleEvent: googleEventId
-        ? { eventId: googleEventId, meetLink: meetLink }
+        ? {
+            eventId: googleEventId,
+            meetLink: meetLink,
+            colorId: calendarColorId,
+            guests: guestEmails,
+          }
         : null,
     });
   } catch (error: unknown) {

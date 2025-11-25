@@ -55,13 +55,10 @@ interface FormData {
   link_meet: string;
 }
 
-// Tipe data untuk dikirim ke API
 interface ApiFormData extends Omit<FormData, "tanggal_instalasi"> {
   tanggal_instalasi: string;
   google_access_token?: string;
 }
-
-// Tipe data untuk hasil parsing
 interface ParsedData {
   nama_outlet: string;
   nama_owner: string;
@@ -138,7 +135,6 @@ export default function Home() {
       }));
     }
   };
-  
 
   // handleTimeChange
   const handleTimeChange = (part: "hour" | "minute", value: string) => {
@@ -232,7 +228,6 @@ export default function Home() {
         return;
       }
 
-      // Dapatkan session
       const {
         data: { session },
         error: sessionError,

@@ -161,7 +161,7 @@ export async function POST(request: Request) {
 
           console.log("✅ Event Google berhasil dihapus");
         } catch (googleError: unknown) {
-          // Jangan gagalkan seluruh proses jika Google error
+        
           console.warn("⚠️ Gagal menghapus event Google:", googleError);
         }
       } else {
