@@ -211,7 +211,7 @@ export async function POST(request: Request) {
           addHours(dataToUpdate.pukul_instalasi, 2)
         );
 
-        const summary = `${dataToUpdate.nama_outlet} - Zulvan Avito - ${dataToUpdate.sch_leads}`;
+        const summary = `${dataToUpdate.nama_outlet} - Zulvan Avito Anwari - ${dataToUpdate.sch_leads}`;
 
         const description = `
 Outlet: ${dataToUpdate.nama_outlet}

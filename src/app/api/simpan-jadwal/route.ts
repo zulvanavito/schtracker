@@ -52,7 +52,7 @@ function addHours(time: string, hours: number): string {
 async function createGoogleCalendarEvent(accessToken: string, eventData: any) {
   try {
     // FORMAT BARU: "Nama outlet - nama lengkap - kode SCH"
-    const summary = `${eventData.nama_outlet} - Zulvan Avito - ${eventData.sch_leads}`;
+    const summary = `${eventData.nama_outlet} - Zulvan Avito Anwari - ${eventData.sch_leads}`;
     
     const description = `
 Outlet: ${eventData.nama_outlet}
