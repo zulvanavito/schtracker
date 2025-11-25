@@ -48,12 +48,21 @@ function addHours(time: string, hours: number): string {
   return `${newHours.toString().padStart(2, "0")}:${minutesStr}`;
 }
 
+// Helper function untuk mendapatkan daftar guests - HANYA SATU EMAIL
+function getGuestEmails(instalasiData: any): string[] {
+  // HANYA satu email yang ditambahkan - zulvan.majoo@gmail.com
+  return ["zulvan.majoo@gmail.com"];
+}
+
 // Helper function untuk update Google Calendar event
 async function updateGoogleCalendarEvent(
   accessToken: string,
   eventId: string,
   eventData: Record<string, any>
 ) {
+  console.log("📧 Guest emails yang akan diinvite:", eventData.attendees);
+  console.log("🎨 ColorId yang digunakan:", eventData.colorId);
+
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
     {
@@ -211,6 +220,18 @@ export async function POST(request: Request) {
           addHours(dataToUpdate.pukul_instalasi, 2)
         );
 
+        // 🎨 DEFAULT COLOR: FLAMINGO (colorId: '4') - SAMA DENGAN simpan-jadwal
+        const colorId = "4";
+
+        // 👥 HANYA SATU GUEST - zulvan.majoo@gmail.com - SAMA DENGAN simpan-jadwal
+        const guestEmails = getGuestEmails(dataToUpdate);
+
+        const attendees = guestEmails.map((email) => ({
+          email: email,
+          displayName: "Zulvan Majoo",
+          responseStatus: "accepted",
+        }));
+
         const summary = `${dataToUpdate.nama_outlet} - Zulvan Avito Anwari - ${dataToUpdate.sch_leads}`;
 
         const description = `
@@ -247,12 +268,35 @@ ${
             dateTime: endTime.isoString,
             timeZone: endTime.timeZone,
           },
-          colorId: dataToUpdate.tipe_outlet === "Online" ? "2" : "4", // Sage untuk Online, Flamingo untuk Offline
+          // 🎨 TAMBAHAN: Color Flamingo Default
+          colorId: colorId,
+          // 👥 TAMBAHAN: Guests
+          attendees: attendees,
+          // 🔔 TAMBAHAN: Notifikasi - SAMA DENGAN simpan-jadwal
+          reminders: {
+            useDefault: false,
+            overrides: [
+              { method: "email", minutes: 24 * 60 }, // 1 hari sebelumnya
+              { method: "popup", minutes: 60 }, // 1 jam sebelumnya
+            ],
+          },
+          // 🎯 TAMBAHAN: Visibility settings
+          transparency: "opaque",
+          visibility: "default",
         };
 
         console.log(
           "📤 Update event data ke Google:",
-          JSON.stringify(googleEvent, null, 2)
+          JSON.stringify(
+            {
+              summary: googleEvent.summary,
+              colorId: googleEvent.colorId,
+              attendees: googleEvent.attendees,
+              timeZone: googleEvent.start.timeZone,
+            },
+            null,
+            2
+          )
         );
 
         await updateGoogleCalendarEvent(
@@ -261,7 +305,9 @@ ${
           googleEvent
         );
 
-        console.log("✅ Event Google berhasil diupdate");
+        console.log(
+          "✅ Event Google berhasil diupdate dengan Flamingo color & guest"
+        );
       } catch (googleError: unknown) {
         // Jangan gagalkan seluruh proses jika Google error
         if (googleError instanceof Error) {
