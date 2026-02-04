@@ -579,7 +579,7 @@ export default function HalamanTabel() {
 
       if (!response.ok) throw new Error("Failed to save log");
       toast.success("Template generated and logged.");
-      fetchJadwal();
+      // fetchJadwal(); // Removed to prevent UI flicker
     } catch (error) {
       toast.error("Failed to log message");
     } finally {
