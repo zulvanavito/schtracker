@@ -150,12 +150,21 @@ function calculateDurationInMs(item: Jadwal | EditFormData) {
 
 const eventPropGetter = (event: BigCalendarEvent) => {
   const resource = event.resource as Jadwal;
-  let className = "";
-
-  if (resource.tipe_outlet === "Online") {
-    className = "event-online";
-  } else if (resource.tipe_outlet === "Offline") {
-    className = "event-offline";
+  let className = "event-default";
+  
+  if (resource.tipe_langganan) {
+    const type = resource.tipe_langganan.toLowerCase();
+    if (type.includes("starter basic")) {
+      className = "event-starter-basic";
+    } else if (type.includes("starter")) {
+      className = "event-starter";
+    } else if (type.includes("advance")) {
+      className = "event-advance";
+    } else if (type.includes("prime")) {
+      className = "event-prime";
+    } else if (type.includes("training")) {
+      className = "event-training";
+    }
   }
 
   return { className };
@@ -628,6 +637,31 @@ export default function HalamanJadwal() {
             color="bg-amber-50"
             ring="ring-amber-100"
           />
+        </div>
+
+        {/* Legend */}
+        <div className="mb-6 flex flex-wrap items-center gap-6 px-4 py-3 bg-white/40 backdrop-blur-sm rounded-xl border border-white/40 shadow-sm">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2">Legend:</span>
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
+                <span className="text-xs font-semibold text-slate-600">Starter</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-slate-500"></div>
+                <span className="text-xs font-semibold text-slate-600">Starter Basic</span>
+            </div>
+             <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-xs font-semibold text-slate-600">Advance</span>
+            </div>
+             <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                <span className="text-xs font-semibold text-slate-600">Prime</span>
+            </div>
+             <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <span className="text-xs font-semibold text-slate-600">Training</span>
+            </div>
         </div>
 
         {/* Legend */}

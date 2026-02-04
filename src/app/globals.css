@@ -213,3 +213,23 @@
 .rbc-toolbar {
   @apply hidden; /* We will build a custom toolbar */
 }
+
+/* Event Variants by Subscription Type */
+.event-starter {
+  @apply !bg-cyan-100 !text-cyan-700 !border-l-4 !border-cyan-500;
+}
+.event-starter-basic {
+  @apply !bg-slate-100 !text-slate-700 !border-l-4 !border-slate-500;
+}
+.event-advance {
+  @apply !bg-purple-100 !text-purple-700 !border-l-4 !border-purple-500;
+}
+.event-prime {
+  @apply !bg-amber-100 !text-amber-900 !border-l-4 !border-amber-500;
+}
+.event-training {
+  @apply !bg-emerald-100 !text-emerald-700 !border-l-4 !border-emerald-500;
+}
+.event-default {
+  @apply !bg-blue-100 !text-blue-700 !border-l-4 !border-blue-500;
+}
