@@ -86,10 +86,21 @@ ${
       eventData.tanggal_instalasi,
       eventData.pukul_instalasi
     );
-    const endTime = formatDateTimeForGoogle(
-      eventData.tanggal_instalasi,
-      addHours(eventData.pukul_instalasi, 2)
+
+    // Hitung duration dinamis
+    const durationMs = calculateDurationInMs(
+      eventData.tipe_langganan,
+      eventData.tipe_outlet
     );
+
+    // Calculate End Time by adding duration to Start Time
+    const startDateObj = new Date(startTime.isoString);
+    const endDateObj = new Date(startDateObj.getTime() + durationMs);
+    
+    const endTime = {
+      isoString: endDateObj.toISOString(),
+      timeZone: "Asia/Makassar",
+    };
 
     const colorId = "4";
 
