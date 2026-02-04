@@ -122,70 +122,94 @@
   }
 }
 
+/* Glassmorphism Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+  }
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl;
+  }
+  .glass-button {
+    @apply bg-white/40 hover:bg-white/60 backdrop-blur-sm border border-white/30 transition-all duration-300;
+  }
+}
+
+/* Modern Calendar Styles */
 .rbc-calendar {
-  @apply rounded-md border bg-card text-card-foreground p-4;
+  @apply font-sans text-slate-600;
 }
 
-.rbc-toolbar {
-  @apply mb-4 flex flex-wrap gap-2;
-}
-.rbc-toolbar button {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md text-sm;
-}
-.rbc-toolbar button:disabled {
-  @apply bg-secondary text-secondary-foreground opacity-50;
-}
-.rbc-toolbar .rbc-btn-group {
-  @apply flex gap-2;
-}
-.rbc-toolbar .rbc-toolbar-label {
-  @apply text-xl font-semibold my-auto; /* Style "November 2025" */
-}
-
-/* Grid and Headers */
-.rbc-day-bg.rbc-today {
-  @apply bg-accent;
-}
 .rbc-header {
-  @apply border-b p-2 text-center font-semibold;
+  @apply py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs border-b-0;
 }
+
+.rbc-month-view {
+  @apply border-0 rounded-2xl overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm;
+}
+
 .rbc-day-bg {
-  @apply border-l;
+  @apply border-slate-100;
 }
-.rbc-month-view,
-.rbc-time-view,
-.rbc-day-view,
-.rbc-week-view {
-  @apply border-t border-r;
+
+.rbc-off-range-bg {
+  @apply bg-slate-50/50;
 }
-.rbc-time-header {
-  @apply border-b;
-}
-.rbc-time-content {
-  @apply border-t;
+
+.rbc-today {
+  background-color: var(--blue-50-50, #eff6ff80) !important;
 }
 
 .rbc-event {
-  background-color: transparent !important;
-  border: none !important;
-  /* Beri padding agar isinya (wrapper) bisa penuh */
-  padding: 0 !important;
-  @apply rounded-md;
+  border-radius: 0.5rem !important; /* rounded-lg */
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important; /* shadow-sm */
+  border-width: 0px !important; /* border-0 */
+  padding: 0.25rem !important; /* p-1 */
+  transition-property: all !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+  cursor: pointer !important;
+}
+
+.rbc-event:hover {
+  transform: scale(1.02) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important; /* shadow-md */
 }
 
 .rbc-event-content {
-  @apply w-full h-full;
+  @apply text-xs font-medium px-1 truncate;
 }
 
-.event-online .rbc-event-content {
-  @apply bg-green-500 text-white p-1 text-xs rounded-md;
+/* View specific tweaks */
+.rbc-time-view {
+  @apply border-0 rounded-2xl overflow-hidden shadow-sm bg-white/50 backdrop-blur-sm;
 }
 
-.event-offline .rbc-event-content {
-  @apply bg-blue-500 text-white p-1 text-xs rounded-md;
+.rbc-time-header {
+  @apply border-b border-slate-100;
 }
 
-.rbc-event:focus,
-.rbc-event.rbc-selected {
-  @apply outline-none ring-2 ring-ring ring-offset-2;
+.rbc-time-content {
+  @apply border-t-0;
+}
+
+.rbc-timeslot-group {
+  @apply border-b border-slate-100;
+}
+
+.rbc-time-gutter .rbc-timeslot-group {
+  @apply border-r border-slate-100;
+}
+
+.rbc-day-slot .rbc-time-slot {
+  @apply border-t border-slate-50;
+}
+
+.rbc-current-time-indicator {
+  @apply bg-blue-500 h-[2px];
+}
+
+/* Toolbar Customization */
+.rbc-toolbar {
+  @apply hidden; /* We will build a custom toolbar */
 }

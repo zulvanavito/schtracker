@@ -37,9 +37,11 @@ import {
   Link2,
   ArrowRight,
   CheckCircle2,
+  ListRestart,
 } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabaseClient";
+
 interface FormData {
   nama_outlet: string;
   nama_owner: string;
@@ -196,13 +198,13 @@ export default function Home() {
       // Auto advance to step 2 after parsing
       setCurrentStep(2);
 
-      toast.success("Data berhasil diurai!", {
-        description: "Formulir telah terisi otomatis. Silakan verifikasi.",
+      toast.success("Parsed Successfully!", {
+        description: "Review details and complete the schedule.",
       });
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error("Gagal mengurai data", { description: errorMessage });
+      toast.error("Parsing Failed", { description: errorMessage });
     }
   };
 
@@ -213,8 +215,8 @@ export default function Home() {
     try {
       // Validasi form
       if (!formData.tanggal_instalasi) {
-        toast.error("Validasi Gagal", {
-          description: "Tanggal Instalasi wajib diisi.",
+        toast.error("Validation Error", {
+          description: "Installation Date is required.",
         });
         return;
       }
@@ -222,8 +224,8 @@ export default function Home() {
         !formData.pukul_instalasi ||
         formData.pukul_instalasi.split(":").length < 2
       ) {
-        toast.error("Validasi Gagal", {
-          description: "Pukul Instalasi (Jam dan Menit) wajib diisi.",
+        toast.error("Validation Error", {
+          description: "Installation Time is required.",
         });
         return;
       }
@@ -235,11 +237,11 @@ export default function Home() {
 
       if (sessionError) {
         console.error("Error getting session:", sessionError);
-        throw new Error("Gagal mendapatkan session: " + sessionError.message);
+        throw new Error("Session Error: " + sessionError.message);
       }
 
       if (!session) {
-        throw new Error("Anda belum login. Silakan login terlebih dahulu.");
+        throw new Error("Login Required. Please sign in first.");
       }
 
       const dataToSend: ApiFormData = {
@@ -265,7 +267,7 @@ export default function Home() {
 
       if (!response.ok) {
         throw new Error(
-          result.error || `Gagal menyimpan data (${response.status})`
+          result.error || `Failed to save data (${response.status})`
         );
       }
 
@@ -274,29 +276,29 @@ export default function Home() {
       setRawText("");
       setCurrentStep(1);
 
-      toast.success("Berhasil!", {
-        description: `Jadwal berhasil disimpan! Link Meet: ${
-          result.data?.link_meet || "Tidak tersedia"
+      toast.success("Schedule Saved!", {
+        description: `Link Meet: ${
+          result.data?.link_meet || "Not available / Offline"
         }`,
       });
     } catch (error: unknown) {
-      console.error("❌ Error dalam handleSubmit:", error);
+      console.error("❌ Error in handleSubmit:", error);
 
-      let errorMessage = "Terjadi kesalahan yang tidak diketahui";
+      let errorMessage = "Unknown error occurred";
       if (error instanceof Error) {
         errorMessage = error.message;
         if (
           error.message.includes("401") ||
           error.message.includes("Unauthorized")
         ) {
-          errorMessage = "Sesi login telah berakhir. Silakan login ulang.";
+          errorMessage = "Session expired. Please login again.";
         } else if (error.message.includes("Google access token")) {
           errorMessage =
-            "Token Google tidak tersedia. Pastikan login dengan Google OAuth.";
+            "Google Token missing. Please re-login with Google.";
         }
       }
 
-      toast.error("Gagal menyimpan data", {
+      toast.error("Failed to Save", {
         description: errorMessage,
       });
     } finally {
@@ -308,84 +310,87 @@ export default function Home() {
     formData.pukul_instalasi.split(":");
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-blue-50 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Sparkles className="h-6 w-6 text-white" />
+        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-10">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+               <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 ring-4 ring-blue-50">
+                <Sparkles className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Parser Jadwal
+                <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 tracking-tight">
+                  Smart Parser
                 </h1>
-                <p className="text-muted-foreground text-lg">
-                  Transform data mentah menjadi jadwal terstruktur secara instan
+                <p className="text-slate-500 text-lg font-medium">
+                  Transform raw text into structured schedules instantly
                 </p>
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button asChild variant="outline" className="gap-2">
+             <Button
+              asChild
+              variant="outline"
+              className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium"
+            >
               <Link href="/tabel">
                 <FileText className="h-4 w-4" />
-                Daftar Tabel
+                Data Table
               </Link>
             </Button>
-            <Button asChild variant="outline" className="gap-2">
+            <Button
+              asChild
+              className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600"
+            >
               <Link href="/jadwal">
                 <Calendar className="h-4 w-4" />
-                Kalender
+                Calendar
               </Link>
             </Button>
-            <AuthButton />
+            <div className="pl-3 border-l border-slate-200">
+              <AuthButton />
+            </div>
           </div>
         </header>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-sm border">
+        <div className="flex items-center justify-center mb-10">
+          <div className="flex items-center gap-6 bg-white/60 backdrop-blur-md rounded-2xl px-6 py-3 shadow-sm border border-white/50">
             <StepIndicator
               number={1}
-              label="Tempel Data"
+              label="Paste Data"
               isActive={currentStep === 1}
               isCompleted={currentStep > 1}
             />
-            <ArrowRight className="h-4 w-4 text-muted-foreground mx-2" />
+            <div className={`h-1 w-12 rounded-full ${currentStep > 1 ? "bg-green-500" : "bg-slate-200"}`} />
             <StepIndicator
               number={2}
-              label="Verifikasi"
+              label="Review & Save"
               isActive={currentStep === 2}
               isCompleted={currentStep > 2}
-            />
-            <ArrowRight className="h-4 w-4 text-muted-foreground mx-2" />
-            <StepIndicator
-              number={3}
-              label="Simpan"
-              isActive={currentStep === 3}
-              isCompleted={false}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
           {/* Input Section */}
           <div
-            className={`transition-all duration-300 ${
-              currentStep > 1 ? "xl:opacity-50 xl:scale-95" : ""
+            className={`transition-all duration-500 ease-in-out ${
+              currentStep > 1 ? "xl:opacity-40 xl:scale-95 blur-sm grayscale-[0.5]" : ""
             }`}
           >
-            <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm">
-              <CardHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Sparkles className="h-5 w-5 text-blue-600" />
-                  Langkah 1: Tempel Data Mentah
+            <Card className="glass-card border-0">
+              <CardHeader className="border-b border-slate-100/50 pb-4">
+                <CardTitle className="flex items-center gap-3 text-xl text-slate-800">
+                   <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+                        <ListRestart className="h-5 w-5" />
+                    </div>
+                  Step 1: Input Raw Data
                 </CardTitle>
-                <CardDescription>
-                  Salin dan tempel data dari spreadsheet Anda. Sistem akan
-                  secara otomatis mengurai informasi penting.
+                <CardDescription className="text-slate-500">
+                  Paste data from WhatsApp or Excel. Our AI-like parser will detect key info.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
@@ -394,46 +399,37 @@ export default function Home() {
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
                     rows={12}
-                    placeholder={`Contoh format data:
+                    placeholder={`Expected Format:
 Nama Outlet
 Nama Owner
 081234567890
 INV/2024/001
 SCH/LEADS/001
-Jl. Contoh Alamat No. 123
+Jl. Example Address No. 123
 Tipe: Online
 Langganan: Starter`}
-                    className="resize-none border-2 focus:border-blue-300 transition-colors rounded-xl min-h-[200px]"
+                    className="resize-none rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300 min-h-[280px] font-mono text-sm leading-relaxed"
                   />
 
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-1 bg-amber-100 rounded-full mt-0.5">
-                        <Sparkles className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-amber-800">
-                          Tips Format Terbaik
-                        </p>
-                        <p className="text-xs text-amber-700">
-                          Pastikan data memiliki: Nama Outlet, Nama Owner, No.
-                          Telepon, No. Invoice, Alamat, dan Tipe Langganan dalam
-                          baris terpisah.
-                        </p>
-                      </div>
+                  <div className="bg-amber-50/80 border border-amber-200/50 rounded-xl p-4 flex gap-3">
+                    <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-amber-800">Pro Tip</p>
+                      <p className="text-xs text-amber-700 leading-relaxed">
+                        Ensure each data point (Name, Phone, Invoice, etc.) is on a new line for best accuracy.
+                      </p>
                     </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-slate-50/50 border-t px-6 py-4">
+              <CardFooter className="bg-slate-50/30 border-t border-slate-100/50 px-6 py-4">
                 <Button
                   onClick={handleParse}
-                  className="w-full py-6 text-base font-semibold rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25"
+                  className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300"
                   disabled={!rawText.trim()}
-                  size="lg"
                 >
-                  <Sparkles className="mr-2 h-5 w-5" />
-                  Urai Data Otomatis
+                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
+                  Auto Parse Data
                 </Button>
               </CardFooter>
             </Card>
@@ -441,30 +437,30 @@ Langganan: Starter`}
 
           {/* Form Section */}
           <div
-            className={`transition-all duration-300 ${
-              currentStep < 2 ? "xl:opacity-50 xl:scale-95" : ""
+            className={`transition-all duration-500 ease-in-out ${
+              currentStep < 2 ? "xl:opacity-50 xl:scale-95 pointer-events-none" : "scale-100 opacity-100"
             }`}
           >
             <form onSubmit={handleSubmit}>
-              <Card className="border-0 shadow-lg rounded-2xl overflow-hidden bg-white/90 backdrop-blur-sm h-full">
-                <CardHeader className="bg-linear-to-r from-green-50 to-emerald-50 border-b">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    Langkah 2: Verifikasi & Simpan
+              <Card className={`glass-card border-0 h-full ${currentStep < 2 ? "ring-0" : "ring-4 ring-green-50"}`}>
+                <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 border-b border-emerald-100/50 pb-4">
+                  <CardTitle className="flex items-center gap-3 text-xl text-slate-800">
+                    <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600">
+                        <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    Step 2: Verify & Save
                   </CardTitle>
-                  <CardDescription>
-                    Periksa data yang telah diurai, lengkapi informasi jadwal,
-                    dan simpan ke sistem.
+                  <CardDescription className="text-slate-500">
+                    Review parsed data, add schedule time, and confirm.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
+                <CardContent className="p-6 space-y-8">
                   {/* Informasi Outlet */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg flex items-center gap-2 text-slate-700">
-                      <Building className="h-5 w-5 text-blue-500" />
-                      Informasi Outlet
+                  <div className="space-y-5">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                      <Building className="h-4 w-4" /> Outlet Details
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <FormInput
                         label="Nama Outlet"
                         name="nama_outlet"
@@ -510,68 +506,72 @@ Langganan: Starter`}
                   </div>
 
                   {/* Tipe & Langganan */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="tipe_outlet"
-                        className="flex items-center gap-2 text-sm font-medium"
-                      >
-                        <Link2 className="h-4 w-4 text-blue-500" />
-                        Tipe Outlet
-                      </Label>
-                      <Select
-                        name="tipe_outlet"
-                        value={formData.tipe_outlet}
-                        onValueChange={(value) =>
-                          handleSelectChange("tipe_outlet", value)
-                        }
-                        required
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Pilih tipe outlet" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Online">Online</SelectItem>
-                          <SelectItem value="Offline">Offline</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-5">
+                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                      <ListRestart className="h-4 w-4" /> Classification
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                        <Label
+                            htmlFor="tipe_outlet"
+                            className="flex items-center gap-2 text-sm font-medium text-slate-700"
+                        >
+                            <Link2 className="h-4 w-4 text-blue-500" />
+                            Tipe Outlet
+                        </Label>
+                        <Select
+                            name="tipe_outlet"
+                            value={formData.tipe_outlet}
+                            onValueChange={(value) =>
+                            handleSelectChange("tipe_outlet", value)
+                            }
+                            required
+                        >
+                            <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                            <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="Online">Online</SelectItem>
+                            <SelectItem value="Offline">Offline</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        </div>
+                        <FormInput
+                        label="Tipe Langganan"
+                        name="tipe_langganan"
+                        value={formData.tipe_langganan}
+                        onChange={handleInputChange}
+                        />
                     </div>
-                    <FormInput
-                      label="Tipe Langganan"
-                      name="tipe_langganan"
-                      value={formData.tipe_langganan}
-                      onChange={handleInputChange}
-                    />
                   </div>
 
                   {/* Jadwal Instalasi */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="font-semibold text-lg flex items-center gap-2 text-slate-700">
-                      <Calendar className="h-5 w-5 text-green-500" />
-                      Jadwal Instalasi
+                  <div className="pt-6 border-t border-slate-100">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
+                      <Clock className="h-4 w-4" /> Scheduling
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                       <FormInput
-                        label="Hari Instalasi"
+                        label="Hari"
                         name="hari_instalasi"
                         value={formData.hari_instalasi}
                         onChange={handleInputChange}
                         required
                       />
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <Calendar className="h-4 w-4 text-green-500" />
-                          Tanggal Instalasi
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                          <Calendar className="h-4 w-4 text-emerald-500" />
+                          Tanggal
                         </Label>
                         <DatePicker
                           date={formData.tanggal_instalasi}
                           onSelect={handleDateChange}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
                           <Clock className="h-4 w-4 text-purple-500" />
-                          Waktu Instalasi
+                          Waktu
                         </Label>
                         <div className="flex gap-2">
                           <Select
@@ -581,13 +581,13 @@ Langganan: Starter`}
                             }
                             required
                           >
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue placeholder="Jam" />
+                            <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                              <SelectValue placeholder="HH" />
                             </SelectTrigger>
                             <SelectContent className="max-h-60">
                               {hours.map((hour) => (
                                 <SelectItem key={hour} value={hour}>
-                                  {hour}.00
+                                  {hour}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -599,13 +599,13 @@ Langganan: Starter`}
                             }
                             required
                           >
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue placeholder="Menit" />
+                            <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                              <SelectValue placeholder="MM" />
                             </SelectTrigger>
                             <SelectContent>
                               {minutes.map((minute) => (
                                 <SelectItem key={minute} value={minute}>
-                                  .{minute}
+                                  {minute}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -616,12 +616,12 @@ Langganan: Starter`}
                   </div>
 
                   {/* Link Meet */}
-                  <div className="pt-4 border-t">
+                  <div className="pt-4 border-t border-slate-100">
                     <FormInput
                       label={
                         formData.tipe_outlet === "Online"
-                          ? "Link Google Meet (Akan dibuat otomatis)"
-                          : "Link Meet (Tidak diperlukan untuk offline)"
+                          ? "Auto-generated Google Meet Link"
+                          : "Meeting Link (Offline N/A)"
                       }
                       name="link_meet"
                       value={formData.link_meet}
@@ -631,17 +631,24 @@ Langganan: Starter`}
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-slate-50/50 border-t px-6 py-4">
+                <CardFooter className="bg-slate-50/30 border-t border-slate-100 px-6 py-6">
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full py-6 text-base font-semibold rounded-xl bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/25"
+                    className="w-full h-14 text-lg font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25"
                     disabled={isSubmitting || !formData.tanggal_instalasi}
                   >
-                    <Save className="mr-2 h-5 w-5" />
-                    {isSubmitting
-                      ? "Menyimpan..."
-                      : "Simpan Jadwal & Buat Link Meet"}
+                     {isSubmitting ? (
+                        <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                            Saving...
+                        </div>
+                     ) : (
+                        <div className="flex items-center gap-2">
+                            <Save className="h-5 w-5" />
+                            Save Schedule & Generate Link
+                        </div>
+                     )}
                   </Button>
                 </CardFooter>
               </Card>
@@ -670,18 +677,18 @@ function StepIndicator({
   return (
     <div className="flex items-center gap-3">
       <div
-        className={`flex items-center justify-center w-8 h-8 rounded-full border-2 font-medium text-sm transition-all ${
+        className={`flex items-center justify-center w-8 h-8 rounded-full border-2 font-bold text-sm transition-all shadow-sm ${
           isCompleted
-            ? "bg-green-500 border-green-500 text-white"
+            ? "bg-emerald-500 border-emerald-500 text-white shadow-emerald-200"
             : isActive
-            ? "bg-blue-500 border-blue-500 text-white"
-            : "bg-white border-slate-300 text-slate-400"
+            ? "bg-blue-600 border-blue-600 text-white shadow-blue-200"
+            : "bg-white border-slate-200 text-slate-300"
         }`}
       >
-        {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : number}
+        {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : number}
       </div>
       <span
-        className={`font-medium transition-colors ${
+        className={`font-semibold tracking-wide transition-colors ${
           isActive || isCompleted ? "text-slate-800" : "text-slate-400"
         }`}
       >
@@ -714,10 +721,10 @@ function FormInput({
   icon,
 }: FormInputProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Label
         htmlFor={name}
-        className="flex items-center gap-2 text-sm font-medium"
+        className="flex items-center gap-2 text-sm font-medium text-slate-700"
       >
         {icon}
         {label}
@@ -730,7 +737,7 @@ function FormInput({
         type={type}
         required={required}
         disabled={disabled}
-        className="rounded-xl border-2 focus:border-blue-300 transition-colors"
+        className="rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300 shadow-sm"
       />
     </div>
   );

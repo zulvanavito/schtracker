@@ -114,11 +114,8 @@ ${
         dateTime: endTime.isoString,
         timeZone: endTime.timeZone,
       },
-      // 🎨 DEFAULT: Color Flamingo untuk semua event
       colorId: colorId,
-      // 👥 TAMBAHAN: Single Guest
       attendees: attendees,
-      // 🔔 TAMBAHAN: Notifikasi
       reminders: {
         useDefault: false,
         overrides: [
@@ -126,8 +123,7 @@ ${
           { method: "popup", minutes: 60 }, // 1 jam sebelumnya
         ],
       },
-      // 🎯 TAMBAHAN: Visibility settings
-      transparency: "opaque", // 'opaque' = busy, 'transparent' = free
+      transparency: "opaque", 
       visibility: "default",
       conferenceData: {
         createRequest: {
@@ -140,7 +136,6 @@ ${
     };
 
     console.log(
-      "📨 Sending Google Calendar request dengan guests & Flamingo color:",
       JSON.stringify(
         {
           summary: event.summary,

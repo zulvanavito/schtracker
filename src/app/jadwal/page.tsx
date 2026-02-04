@@ -43,9 +43,13 @@ import {
   X,
   CheckCircle2,
   MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  MonitorPlay,
+  Map,
 } from "lucide-react";
 
-// (Interface Tipe Data Anda: LogPesan, Jadwal, EditFormData)
+// --- Interfaces ---
 interface LogPesan {
   id: number;
   created_at: string;
@@ -85,7 +89,6 @@ interface EditFormData {
   google_event_id?: string;
 }
 
-// Interface untuk request body
 interface DeleteRequestBody {
   id: number;
   google_access_token?: string;
@@ -109,6 +112,7 @@ interface UpdateRequestBody {
   google_access_token?: string;
 }
 
+// --- Constants & Helpers ---
 const hours = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0")
 );
@@ -157,6 +161,82 @@ const eventPropGetter = (event: BigCalendarEvent) => {
   return { className };
 };
 
+// --- Custom Toolbar Component ---
+const CustomToolbar = (toolbar: any) => {
+  const goToBack = () => {
+    toolbar.onNavigate("PREV");
+  };
+
+  const goToNext = () => {
+    toolbar.onNavigate("NEXT");
+  };
+
+  const goToCurrent = () => {
+    toolbar.onNavigate("TODAY");
+  };
+
+  const label = () => {
+    const date = moment(toolbar.date);
+    return (
+      <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+        {date.format("MMMM YYYY")}
+      </span>
+    );
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+      {/* Navigation */}
+      <div className="flex items-center gap-1 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToBack}
+          className="rounded-xl hover:bg-blue-50 text-slate-600 w-8 h-8"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={goToCurrent}
+          className="font-semibold text-slate-700 px-3 h-8 rounded-xl hover:bg-blue-50 text-sm"
+        >
+          Hari Ini
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToNext}
+          className="rounded-xl hover:bg-blue-50 text-slate-600 w-8 h-8"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Label */}
+      <div className="flex-1 text-center">{label()}</div>
+
+      {/* View Switcher */}
+      <div className="flex items-center gap-1 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/50">
+        {["month", "week", "day"].map((view) => (
+          <button
+            key={view}
+            onClick={() => toolbar.onView(view)}
+            className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+              toolbar.view === view
+                ? "bg-blue-600 text-white shadow-lg shadow-blue-500/30 font-semibold"
+                : "text-slate-500 hover:bg-blue-50 hover:text-blue-600"
+            }`}
+          >
+            {view === "month" ? "Bulan" : view === "week" ? "Minggu" : "Hari"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- Main Component ---
 export default function HalamanJadwal() {
   const [events, setEvents] = useState<BigCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,7 +250,6 @@ export default function HalamanJadwal() {
 
   async function fetchJadwal() {
     setLoading(true);
-
     try {
       const response = await fetch("/api/get-jadwal", {
         cache: "no-store",
@@ -179,9 +258,6 @@ export default function HalamanJadwal() {
       if (!response.ok) throw new Error("Gagal mengambil data jadwal");
 
       const result = await response.json();
-      console.log("📋 Response from API:", result); // Debug log
-
-      // PERBAIKAN: Ambil data dari result.data, bukan result langsung
       const dataJadwal: Jadwal[] = result.data || [];
 
       const formattedEvents = dataJadwal.map((item) => {
@@ -194,22 +270,17 @@ export default function HalamanJadwal() {
           title: `${item.nama_outlet} - ${item.tipe_langganan}`,
           start: startDate,
           end: endDate,
-          resource: item,
+          resource: item, // Simpan data asli di resource
         };
       });
 
       setEvents(formattedEvents);
-      console.log(`✅ Formatted ${formattedEvents.length} events`);
     } catch (err: unknown) {
-      console.error("❌ Error in fetchJadwal:", err);
+      console.error("Error fetching:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Unknown error occurred";
       setError(errorMessage);
-      if (err instanceof Error) {
-        toast.error("Gagal mengambil data", { description: err.message });
-      } else {
-        toast.error("Gagal mengambil data");
-      }
+      toast.error("Gagal mengambil data");
     } finally {
       setLoading(false);
     }
@@ -246,6 +317,7 @@ export default function HalamanJadwal() {
     setEditFormData(null);
   };
 
+  // --- Handlers (Delete, Update) ---
   const handleDelete = async () => {
     if (!selectedEvent) return;
 
@@ -287,7 +359,7 @@ export default function HalamanJadwal() {
 
           const successMessage = session.provider_token
             ? "Jadwal berhasil dihapus (dari Supabase & Google Calendar)!"
-            : "Jadwal berhasil dihapus dari database! (Event Google mungkin masih ada)";
+            : "Jadwal berhasil dihapus dari database!";
 
           resolve(successMessage);
         } catch (err) {
@@ -300,43 +372,6 @@ export default function HalamanJadwal() {
       success: (msg) => msg as string,
       error: (err: Error) => `Error: ${err.message}`,
     });
-  };
-
-  const handleEditInputChange = (name: string, value: string) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
-    }));
-  };
-
-  const handleEditSelectChange = (name: string, value: string) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
-    }));
-  };
-
-  const handleEditDateChange = (date: Date | undefined) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      tanggal_instalasi: date,
-    }));
-  };
-
-  const handleEditTimeChange = (part: "hour" | "minute", value: string) => {
-    if (!editFormData) return;
-    const [currentHour = "09", currentMinute = "00"] = (
-      editFormData.pukul_instalasi || "09:00"
-    ).split(":");
-    let newTime: string;
-    if (part === "hour") {
-      newTime = `${value}:${currentMinute}`;
-    } else {
-      newTime = `${currentHour}:${value}`;
-    }
-    setEditFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
   };
 
   const handleUpdateSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -390,17 +425,14 @@ export default function HalamanJadwal() {
             const value = editFormData[field as keyof EditFormData];
             if (value !== undefined) {
               if (field === "tanggal_instalasi") {
-                // Skip, will handle separately
+                // Skip
               } else {
-                filteredData[field as keyof UpdateRequestBody] = value as
-                  | string
-                  | number
-                  | undefined;
+                filteredData[field as keyof UpdateRequestBody] = value as any;
               }
             }
           });
 
-          // Handle tanggal_instalasi separately with proper type checking
+          // Handle tanggal_instalasi
           if (editFormData.tanggal_instalasi) {
             filteredData.tanggal_instalasi = format(
               editFormData.tanggal_instalasi,
@@ -445,11 +477,48 @@ export default function HalamanJadwal() {
     });
   };
 
+  // --- Form helpers ---
+  const handleEditInputChange = (name: string, value: string) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
+    }));
+  };
+
+  const handleEditSelectChange = (name: string, value: string) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "tipe_outlet" && value === "Offline" && { link_meet: "" }),
+    }));
+  };
+
+  const handleEditDateChange = (date: Date | undefined) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      tanggal_instalasi: date,
+    }));
+  };
+
+  const handleEditTimeChange = (part: "hour" | "minute", value: string) => {
+    if (!editFormData) return;
+    const [currentHour = "09", currentMinute = "00"] = (
+      editFormData.pukul_instalasi || "09:00"
+    ).split(":");
+    let newTime: string;
+    if (part === "hour") {
+      newTime = `${value}:${currentMinute}`;
+    } else {
+      newTime = `${currentHour}:${value}`;
+    }
+    setEditFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
+  };
+
   const [editHour = "", editMinute = ""] = (
     editFormData?.pukul_instalasi || ""
   ).split(":");
 
-  // Format tanggal untuk display
   const formatTanggalDisplay = (dateString: string) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split("-").map(Number);
@@ -463,538 +532,440 @@ export default function HalamanJadwal() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-blue-50/30 p-4 md:p-8">
+    <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-blue-50 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
-            <div className="flex items-center gap-2 text-red-800">
+          <div className="mb-6 p-4 glass-card border-l-4 border-l-red-500 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-red-700">
               <X className="h-5 w-5" />
               <span className="font-medium">Error: {error}</span>
             </div>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setError(null);
                 fetchJadwal();
               }}
-              className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm"
+              className="text-red-700 hover:bg-red-50 border-red-200"
             >
               Coba Lagi
-            </button>
+            </Button>
           </div>
         )}
-        {/* Header */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-8">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <CalendarIcon className="h-6 w-6 text-white" />
+
+        {/* Header Section */}
+        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-10">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 ring-4 ring-blue-50">
+                <CalendarIcon className="h-7 w-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Kalender Jadwal
+                <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 tracking-tight">
+                  Schedule Hub
                 </h1>
-                <p className="text-muted-foreground text-lg">
-                  Visualisasi jadwal instalasi dalam tampilan kalender yang
-                  interaktif
+                <p className="text-slate-500 text-lg font-medium">
+                  Manage installation schedules effortlessly
                 </p>
               </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button asChild variant="outline" className="gap-2">
+            <Button
+              asChild
+              variant="outline"
+              className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium"
+            >
               <Link href="/tabel">
                 <FileText className="h-4 w-4" />
-                Daftar Tabel
+                Data Table
               </Link>
             </Button>
             <Button
               asChild
-              className="gap-2 bg-linear-to-r from-blue-600 to-indigo-600"
+              className="gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300 font-semibold"
             >
               <Link href="/">
                 <Sparkles className="h-4 w-4" />
-                Tambah Jadwal
+                New Schedule
               </Link>
             </Button>
-            <AuthButton />
+            <div className="pl-3 border-l border-slate-200">
+              <AuthButton />
+            </div>
           </div>
         </header>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <CalendarIcon className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Jadwal</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {events.length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Online</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {
-                    events.filter(
-                      (e) => (e.resource as Jadwal)?.tipe_outlet === "Online"
-                    ).length
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border-0">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Building className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Offline</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {
-                    events.filter(
-                      (e) => (e.resource as Jadwal)?.tipe_outlet === "Offline"
-                    ).length
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar Container */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0 overflow-hidden mb-8">
-          <div className="p-6 border-b">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5 text-blue-600" />
-                Kalender Jadwal Instalasi
-              </h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
-                <p className="text-sm text-blue-700 flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Durasi otomatis berdasarkan Tipe Langganan & Outlet
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4">
-            <div className="h-[70vh] rounded-xl overflow-hidden border">
-              {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-muted-foreground">Memuat kalender...</p>
-                  </div>
-                </div>
-              ) : (
-                <Calendar
-                  localizer={localizer}
-                  events={events}
-                  startAccessor="start"
-                  endAccessor="end"
-                  views={["month", "week", "day"]}
-                  onSelectEvent={(event) => openModal(event.resource as Jadwal)}
-                  date={date}
-                  view={view}
-                  onNavigate={onNavigate}
-                  onView={onView}
-                  eventPropGetter={eventPropGetter}
-                  className="rounded-lg"
-                  popup
-                />
-              )}
-            </div>
-          </div>
+        {/* Bento Grid Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <StatCard
+            icon={<CalendarIcon className="h-6 w-6 text-indigo-600" />}
+            label="Total Schedules"
+            value={events.length}
+            color="bg-indigo-50"
+            ring="ring-indigo-100"
+          />
+          <StatCard
+            icon={<MonitorPlay className="h-6 w-6 text-emerald-600" />}
+            label="Online Sessions"
+            value={
+              events.filter(
+                (e) => (e.resource as Jadwal)?.tipe_outlet === "Online"
+              ).length
+            }
+            color="bg-emerald-50"
+            ring="ring-emerald-100"
+          />
+          <StatCard
+            icon={<Map className="h-6 w-6 text-amber-600" />}
+            label="Offline Visits"
+            value={
+              events.filter(
+                (e) => (e.resource as Jadwal)?.tipe_outlet === "Offline"
+              ).length
+            }
+            color="bg-amber-50"
+            ring="ring-amber-100"
+          />
         </div>
 
         {/* Legend */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-0 p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-blue-600" />
-            Kode Warna Jadwal
-          </h3>
-          <div className="flex flex-wrap gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-500 rounded"></div>
-              <span className="text-sm">Online</span>
+        <div className="flex flex-wrap gap-3 mb-6 items-center bg-white/40 backdrop-blur-sm p-3 rounded-2xl w-fit border border-white/40">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2">Legend:</span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100/50 text-emerald-700 text-xs font-semibold border border-emerald-200/50">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Online
+            </span>
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100/50 text-amber-700 text-xs font-semibold border border-amber-200/50">
+                <div className="w-2 h-2 rounded-full bg-amber-500"></div> Offline
+            </span>
+        </div>
+
+        {/* Calendar Container */}
+        <div className="glass-card p-6 md:p-8 min-h-[800px] mb-12">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-[600px] space-y-6">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-4 border-blue-100 animate-pulse"></div>
+                <div className="w-16 h-16 rounded-full border-4 border-blue-600 border-t-transparent animate-spin absolute top-0 left-0"></div>
+              </div>
+              <p className="text-slate-500 font-medium animate-pulse">
+                Synchronizing calendar data...
+              </p>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-orange-500 rounded"></div>
-              <span className="text-sm">Offline</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-500 rounded"></div>
-              <span className="text-sm">Starter Basic (1 jam)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-purple-500 rounded"></div>
-              <span className="text-sm">Starter (2 jam)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-500 rounded"></div>
-              <span className="text-sm">Advance/Prime (3 jam)</span>
-            </div>
-          </div>
+          ) : (
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              views={["month", "week", "day"]}
+              components={{
+                toolbar: CustomToolbar,
+              }}
+              onSelectEvent={(event) => openModal(event.resource as Jadwal)}
+              date={date}
+              view={view}
+              onNavigate={onNavigate}
+              onView={onView}
+              eventPropGetter={eventPropGetter}
+              className="min-h-[700px]"
+              popup
+            />
+          )}
         </div>
       </div>
 
-      {/* Modal Detail & Edit - PERBAIKAN UTAMA DI SINI */}
+      {/* Modal Detail & Edit */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-3xl rounded-2xl border-0 shadow-2xl max-h-[85vh] overflow-hidden mx-4 my-8 flex flex-col">
+        <DialogContent className="sm:max-w-2xl w-[95vw] rounded-3xl border-0 shadow-2xl p-0 overflow-hidden bg-white/95 backdrop-blur-xl ring-1 ring-black/5">
           {selectedEvent && (
             <>
               {isEditing ? (
                 // MODE EDIT
-                <form onSubmit={handleUpdateSubmit} className="flex flex-col h-full">
-                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl flex-shrink-0">
-                    <DialogTitle className="flex items-center gap-2 text-xl">
-                      <Edit className="h-5 w-5 text-blue-600" />
-                      Ubah Jadwal
+                <form
+                  onSubmit={handleUpdateSubmit}
+                  className="flex flex-col max-h-[90vh]"
+                >
+                  <DialogHeader className="p-6 pb-4 border-b border-slate-100">
+                    <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-slate-800">
+                      <div className="p-2 bg-blue-100 rounded-xl">
+                        <Edit className="h-5 w-5 text-blue-600" />
+                      </div>
+                      Edit Schedule
                     </DialogTitle>
                   </DialogHeader>
 
-                  <div className="p-6 space-y-6 overflow-y-auto flex-1">
+                  <div className="p-6 space-y-6 overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <FormInput
-                          label="Nama Outlet"
-                          name="nama_outlet"
-                          value={editFormData?.nama_outlet}
-                          onChange={handleEditInputChange}
-                          icon={<Building className="h-4 w-4" />}
-                        />
-                        <FormInput
-                          label="No Telepon"
-                          name="no_telepon"
-                          value={editFormData?.no_telepon}
-                          onChange={handleEditInputChange}
-                          icon={<Phone className="h-4 w-4" />}
-                        />
-                        <FormInput
-                          label="Alamat"
-                          name="alamat"
-                          value={editFormData?.alamat}
-                          onChange={handleEditInputChange}
-                          icon={<MapPin className="h-4 w-4" />}
-                        />
-                        <FormInput
-                          label="SCH Leads"
-                          name="sch_leads"
-                          value={editFormData?.sch_leads}
-                          onChange={handleEditInputChange}
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <FormInput
-                          label="Nama Owner"
-                          name="nama_owner"
-                          value={editFormData?.nama_owner}
-                          onChange={handleEditInputChange}
-                          icon={<User className="h-4 w-4" />}
-                        />
-                        <FormInput
-                          label="No Invoice"
-                          name="no_invoice"
-                          value={editFormData?.no_invoice}
-                          onChange={handleEditInputChange}
-                          icon={<FileText className="h-4 w-4" />}
-                        />
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Link2 className="h-4 w-4 text-blue-500" />
-                            Tipe Outlet
-                          </Label>
-                          <Select
-                            name="tipe_outlet"
-                            value={editFormData?.tipe_outlet}
-                            onValueChange={(v) =>
-                              handleEditSelectChange("tipe_outlet", v)
-                            }
-                          >
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Online">Online</SelectItem>
-                              <SelectItem value="Offline">Offline</SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-5">
+                            <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Details</h4>
+                            <FormInput
+                                label="Nama Outlet"
+                                name="nama_outlet"
+                                value={editFormData?.nama_outlet}
+                                onChange={handleEditInputChange}
+                                icon={<Building className="h-4 w-4" />}
+                            />
+                             <FormInput
+                                label="Nama Owner"
+                                name="nama_owner"
+                                value={editFormData?.nama_owner}
+                                onChange={handleEditInputChange}
+                                icon={<User className="h-4 w-4" />}
+                            />
+                             <FormInput
+                                label="No Telepon"
+                                name="no_telepon"
+                                value={editFormData?.no_telepon}
+                                onChange={handleEditInputChange}
+                                icon={<Phone className="h-4 w-4" />}
+                            />
                         </div>
-                        <FormInput
-                          label="Tipe Langganan"
-                          name="tipe_langganan"
-                          value={editFormData?.tipe_langganan}
-                          onChange={handleEditInputChange}
-                        />
-                      </div>
+                        <div className="space-y-5">
+                             <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Classification</h4>
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                    <Link2 className="h-4 w-4 text-blue-500" /> Tipe Outlet
+                                </Label>
+                                <Select
+                                    name="tipe_outlet"
+                                    value={editFormData?.tipe_outlet}
+                                    onValueChange={(v) => handleEditSelectChange("tipe_outlet", v)}
+                                >
+                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Online">Online</SelectItem>
+                                        <SelectItem value="Offline">Offline</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <FormInput
+                                label="Tipe Langganan"
+                                name="tipe_langganan"
+                                value={editFormData?.tipe_langganan}
+                                onChange={handleEditInputChange}
+                            />
+                             <FormInput
+                                label="SCH Leads"
+                                name="sch_leads"
+                                value={editFormData?.sch_leads}
+                                onChange={handleEditInputChange}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="pt-6 border-t border-slate-100">
+                        <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Timing</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormInput
+                                label="Hari Instalasi"
+                                name="hari_instalasi"
+                                value={editFormData?.hari_instalasi}
+                                onChange={handleEditInputChange}
+                                required
+                            />
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                    <CalendarIcon className="h-4 w-4 text-emerald-500" /> Tanggal
+                                </Label>
+                                <DatePicker
+                                    date={editFormData?.tanggal_instalasi}
+                                    onSelect={handleEditDateChange}
+                                />
+                            </div>
+                             <div className="space-y-2">
+                                <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                <Clock className="h-4 w-4 text-purple-500" /> Waktu
+                                </Label>
+                                <div className="flex gap-2">
+                                <Select
+                                    value={editHour}
+                                    onValueChange={(value) =>
+                                    handleEditTimeChange("hour", value)
+                                    }
+                                    required
+                                >
+                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectValue placeholder="Jam" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-60">
+                                    {hours.map((hour) => (
+                                        <SelectItem key={hour} value={hour}>
+                                        {hour}.00
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={editMinute}
+                                    onValueChange={(value) =>
+                                    handleEditTimeChange("minute", value)
+                                    }
+                                    required
+                                >
+                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectValue placeholder="Menit" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    {minutes.map((minute) => (
+                                        <SelectItem key={minute} value={minute}>
+                                        .{minute}
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-                      <div className="md:col-span-3">
-                        <FormInput
-                          label="Hari Instalasi"
-                          name="hari_instalasi"
-                          value={editFormData?.hari_instalasi}
-                          onChange={handleEditInputChange}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <CalendarIcon className="h-4 w-4 text-green-500" />
-                          Tanggal Instalasi
-                        </Label>
-                        <DatePicker
-                          date={editFormData?.tanggal_instalasi}
-                          onSelect={handleEditDateChange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                          <Clock className="h-4 w-4 text-purple-500" />
-                          Waktu Instalasi
-                        </Label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={editHour}
-                            onValueChange={(value) =>
-                              handleEditTimeChange("hour", value)
-                            }
-                            required
-                          >
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue placeholder="Jam" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                              {hours.map((hour) => (
-                                <SelectItem key={hour} value={hour}>
-                                  {hour}.00
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={editMinute}
-                            onValueChange={(value) =>
-                              handleEditTimeChange("minute", value)
-                            }
-                            required
-                          >
-                            <SelectTrigger className="rounded-xl">
-                              <SelectValue placeholder="Menit" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {minutes.map((minute) => (
-                                <SelectItem key={minute} value={minute}>
-                                  .{minute}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="md:col-span-3">
-                        <FormInput
-                          label={
-                            editFormData?.tipe_outlet === "Online"
-                              ? "Link Google Meet (Akan dibuat otomatis)"
-                              : "Link Meet (Tidak diperlukan untuk offline)"
-                          }
-                          name="link_meet"
-                          value={editFormData?.link_meet}
-                          onChange={handleEditInputChange}
-                          disabled={true}
-                          icon={<Link2 className="h-4 w-4" />}
-                        />
-                      </div>
-                    </div>
+                    <FormInput
+                        label="Alamat Lengkap"
+                        name="alamat"
+                        value={editFormData?.alamat}
+                        onChange={handleEditInputChange}
+                        icon={<MapPin className="h-4 w-4" />}
+                    />
                   </div>
 
-                  <DialogFooter className="bg-slate-50/50 border-t p-4 rounded-b-2xl gap-2 flex-shrink-0">
-                    <div className="flex gap-2 flex-wrap w-full justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsEditing(false)}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[100px] px-4 py-2 text-sm"
-                      >
-                        <X className="h-4 w-4" />
-                        Batal
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="gap-2 rounded-xl bg-linear-to-r from-green-600 to-emerald-600 whitespace-nowrap min-w-[120px] px-4 py-2 text-sm"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Simpan
-                      </Button>
-                    </div>
+                  <DialogFooter className="p-6 bg-slate-50/50 border-t border-slate-100 gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setIsEditing(false)}
+                      className="rounded-xl hover:bg-slate-200/50 text-slate-600"
+                    >
+                      Batal
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 px-6"
+                    >
+                      Simpan Perubahan
+                    </Button>
                   </DialogFooter>
                 </form>
               ) : (
                 // MODE VIEW
                 <>
-                  <DialogHeader className="bg-linear-to-r from-blue-50 to-indigo-50 border-b p-6 rounded-t-2xl flex-shrink-0">
-                    <DialogTitle className="flex items-center gap-2 text-xl">
-                      <CalendarIcon className="h-5 w-5 text-blue-600" />
-                      Detail Jadwal
-                    </DialogTitle>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          selectedEvent.tipe_outlet === "Online"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-orange-100 text-orange-800"
-                        }`}
-                      >
-                        {selectedEvent.tipe_outlet}
-                      </span>
-                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
-                        {selectedEvent.sch_leads}
-                      </span>
+                  <DialogHeader className="p-0">
+                    <div className={`h-24 w-full bg-gradient-to-r ${selectedEvent.tipe_outlet === "Online" ? "from-emerald-500 to-teal-500" : "from-amber-500 to-orange-500"} relative`}>
+                        <div className="absolute -bottom-10 left-6 p-4 bg-white rounded-2xl shadow-xl ring-4 ring-white">
+                             {selectedEvent.tipe_outlet === "Online" ? (
+                                <MonitorPlay className="h-8 w-8 text-emerald-600" />
+                             ) : (
+                                <Building className="h-8 w-8 text-amber-600" />
+                             )}
+                        </div>
+                    </div>
+                    <div className="mt-12 px-6">
+                        <DialogTitle className="text-2xl font-bold text-slate-800">
+                          {selectedEvent.nama_outlet}
+                        </DialogTitle>
+                        <p className="text-slate-500 font-medium">{selectedEvent.sch_leads}</p>
                     </div>
                   </DialogHeader>
 
-                  <div className="p-6 space-y-6 overflow-y-auto flex-1">
-                    {/* Informasi Utama */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <InfoItem
-                          icon={<Building className="h-4 w-4 text-blue-600" />}
-                          label="Outlet"
-                          value={selectedEvent.nama_outlet}
-                        />
-                        <InfoItem
-                          icon={<User className="h-4 w-4 text-green-600" />}
+                  <div className="px-6 py-6 space-y-8 overflow-y-auto max-h-[60vh]">
+                    {/* Status Chips */}
+                    <div className="flex gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedEvent.tipe_outlet === "Online" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                            {selectedEvent.tipe_outlet}
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-700">
+                            {selectedEvent.tipe_langganan}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+                         <InfoItem
+                          icon={<User className="h-4 w-4 text-slate-400" />}
                           label="Owner"
                           value={selectedEvent.nama_owner}
                         />
-                        <InfoItem
-                          icon={<Phone className="h-4 w-4 text-purple-600" />}
-                          label="No. Telepon"
+                         <InfoItem
+                          icon={<Phone className="h-4 w-4 text-slate-400" />}
+                          label="Contact"
                           value={selectedEvent.no_telepon}
                         />
-                        <InfoItem
-                          icon={
-                            <FileText className="h-4 w-4 text-orange-600" />
-                          }
-                          label="No. Invoice"
-                          value={selectedEvent.no_invoice || "-"}
+                         <InfoItem
+                          icon={<CalendarIcon className="h-4 w-4 text-slate-400" />}
+                          label="Date"
+                          value={formatTanggalDisplay(selectedEvent.tanggal_instalasi)}
                         />
-                      </div>
-                      <div className="space-y-4">
-                        <InfoItem
-                          icon={
-                            <CalendarIcon className="h-4 w-4 text-red-600" />
-                          }
-                          label="Tanggal"
-                          value={formatTanggalDisplay(
-                            selectedEvent.tanggal_instalasi
-                          )}
+                         <InfoItem
+                          icon={<Clock className="h-4 w-4 text-slate-400" />}
+                          label="Time"
+                          value={`${selectedEvent.pukul_instalasi} WIB`}
                         />
-                        <InfoItem
-                          icon={<Clock className="h-4 w-4 text-indigo-600" />}
-                          label="Waktu"
-                          value={selectedEvent.pukul_instalasi}
-                        />
-                        <InfoItem
-                          icon={
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          }
-                          label="Tipe Langganan"
-                          value={selectedEvent.tipe_langganan}
-                        />
-                        <InfoItem
-                          icon={<Link2 className="h-4 w-4 text-blue-600" />}
-                          label="Link Meet"
-                          value={selectedEvent.link_meet || "-"}
-                          isLink={!!selectedEvent.link_meet}
-                        />
-                      </div>
                     </div>
 
-                    {/* Alamat */}
-                    <div className="border-t pt-4">
-                      <InfoItem
-                        icon={<MapPin className="h-4 w-4 text-red-600" />}
-                        label="Alamat Lengkap"
-                        value={selectedEvent.alamat}
-                        fullWidth
-                      />
-                    </div>
-
-                    {/* Riwayat Pesan */}
-                    <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-3 flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-blue-600" />
-                        Riwayat Pesan Terkirim
-                      </h4>
-                      {selectedEvent.log_pesan &&
-                      selectedEvent.log_pesan.length > 0 ? (
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {selectedEvent.log_pesan.map((log) => (
-                            <div
-                              key={log.id}
-                              className="bg-slate-50 rounded-lg p-3 border"
-                            >
-                              <div className="flex justify-between items-start">
-                                <span className="font-medium text-sm">
-                                  {log.tipe_pesan}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(log.created_at).toLocaleString(
-                                    "id-ID"
-                                  )}
-                                </span>
-                              </div>
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                        <div className="flex items-start gap-3">
+                            <MapPin className="h-5 w-5 text-slate-400 mt-0.5" />
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Address</p>
+                                <p className="text-slate-700 leading-relaxed font-medium">{selectedEvent.alamat}</p>
                             </div>
-                          ))}
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic bg-slate-50 rounded-lg p-4 text-center">
-                          Belum ada riwayat pesan terkirim untuk jadwal ini.
-                        </p>
-                      )}
+                         {selectedEvent.link_meet && (
+                            <div className="flex items-start gap-3 pt-3 border-t border-slate-200">
+                                <Link2 className="h-5 w-5 text-blue-500 mt-0.5" />
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Meet Link</p>
+                                    <a href={selectedEvent.link_meet} target="_blank" className="text-blue-600 hover:underline font-medium break-all">
+                                        {selectedEvent.link_meet}
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Log Pesan */}
+                    <div className="space-y-3">
+                        <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                            <MessageSquare className="h-4 w-4 text-blue-500" /> Message History
+                        </h4>
+                        {selectedEvent.log_pesan && selectedEvent.log_pesan.length > 0 ? (
+                             <div className="space-y-2">
+                                {selectedEvent.log_pesan.map((log) => (
+                                    <div key={log.id} className="flex justify-between items-center p-3 rounded-lg bg-blue-50/50 border border-blue-100">
+                                        <span className="text-sm font-medium text-blue-900">{log.tipe_pesan}</span>
+                                        <span className="text-xs text-blue-400">{new Date(log.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                ))}
+                             </div>
+                        ) : (
+                            <p className="text-sm text-slate-400 italic">No messages sent yet.</p>
+                        )}
                     </div>
                   </div>
 
-                  <DialogFooter className="bg-slate-50/50 border-t p-4 rounded-b-2xl gap-2 flex-shrink-0">
-                    <div className="flex gap-2 flex-wrap w-full justify-end">
-                      <Button
-                        variant="destructive"
-                        onClick={handleDelete}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[90px] px-3 py-2 text-sm"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Hapus
-                      </Button>
-                      <Button
+                  <DialogFooter className="p-6 pt-2 gap-3 justify-between items-center border-t border-slate-100">
+                     <Button
+                      variant="ghost"
+                      onClick={handleDelete}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                    </Button>
+                    <div className="flex gap-3">
+                        <Button
                         variant="outline"
-                        onClick={() => setIsEditing(true)}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[90px] px-3 py-2 text-sm"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Ubah
-                      </Button>
-                      <Button
-                        variant="secondary"
                         onClick={closeModal}
-                        className="gap-2 rounded-xl whitespace-nowrap min-w-[90px] px-3 py-2 text-sm"
-                      >
-                        <X className="h-4 w-4" />
-                        Tutup
-                      </Button>
+                        className="rounded-xl border-slate-200 text-slate-600"
+                        >
+                        Close
+                        </Button>
+                        <Button
+                        onClick={() => setIsEditing(true)}
+                        className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20"
+                        >
+                        <Edit className="h-4 w-4 mr-2" /> Edit Info
+                        </Button>
                     </div>
                   </DialogFooter>
                 </>
@@ -1007,56 +978,29 @@ export default function HalamanJadwal() {
   );
 }
 
-// Komponen Info Item untuk tampilan yang konsisten
-interface InfoItemProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  fullWidth?: boolean;
-  isLink?: boolean;
-}
+// --- Components Helpers ---
 
-function InfoItem({
-  icon,
-  label,
-  value,
-  fullWidth = false,
-  isLink = false,
-}: InfoItemProps) {
+function StatCard({ icon, label, value, color, ring }: any) {
   return (
-    <div className={fullWidth ? "md:col-span-2" : ""}>
-      <div className="flex items-start gap-3">
-        <div className="p-1 bg-slate-100 rounded-lg mt-0.5">{icon}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-700 mb-1">{label}</p>
-          {isLink && value !== "-" ? (
-            <a
-              href={value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:text-blue-800 hover:underline wrap-break-word"
-            >
-              {value}
-            </a>
-          ) : (
-            <p className="text-sm text-slate-900 wrap-break-word">{value}</p>
-          )}
-        </div>
+    <div className="glass-card p-5 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
+      <div className={`p-3 rounded-2xl ${color} ${ring} ring-1`}>{icon}</div>
+      <div>
+        <p className="text-sm text-slate-500 font-medium">{label}</p>
+        <p className="text-3xl font-extrabold text-slate-800">{value}</p>
       </div>
     </div>
   );
 }
 
-// Komponen FormInput dengan icon
-interface FormInputProps {
-  label: string;
-  name: string;
-  value?: string;
-  onChange: (name: string, value: string) => void;
-  type?: string;
-  required?: boolean;
-  disabled?: boolean;
-  icon?: React.ReactNode;
+function InfoItem({ icon, label, value, isLink }: any) {
+  return (
+    <div>
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-2">
+        {icon} {label}
+      </p>
+      <p className="text-base font-semibold text-slate-800 truncate">{value || "-"}</p>
+    </div>
+  );
 }
 
 function FormInput({
@@ -1068,12 +1012,12 @@ function FormInput({
   required = false,
   disabled = false,
   icon,
-}: FormInputProps) {
+}: any) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Label
         htmlFor={name}
-        className="flex items-center gap-2 text-sm font-medium"
+        className="flex items-center gap-2 text-sm font-medium text-slate-700"
       >
         {icon}
         {label}
@@ -1086,43 +1030,8 @@ function FormInput({
         type={type}
         required={required}
         disabled={disabled}
-        className="rounded-xl border-2 focus:border-blue-300 transition-colors"
+        className="rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300"
       />
     </div>
   );
-}
-
-// Tambahkan CSS kustom untuk kalender
-const calendarStyles = `
-  .event-online {
-    background-color: #10b981 !important;
-    border-color: #059669 !important;
-  }
-  .event-offline {
-    background-color: #f59e0b !important;
-    border-color: #d97706 !important;
-  }
-  .rbc-event {
-    border-radius: 8px;
-    border: none;
-    padding: 2px 8px;
-    font-size: 0.875rem;
-  }
-  .rbc-today {
-    background-color: #eff6ff;
-  }
-  .rbc-header {
-    padding: 8px;
-    font-weight: 600;
-  }
-  .rbc-date-cell {
-    padding: 4px 8px;
-  }
-`;
-
-// Inject styles
-if (typeof document !== "undefined") {
-  const styleSheet = document.createElement("style");
-  styleSheet.innerText = calendarStyles;
-  document.head.appendChild(styleSheet);
 }
