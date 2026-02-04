@@ -6,6 +6,8 @@ import { Metadata } from "next";
 
 const inter = Inter({ subsets: ["latin"] });
 
+import SessionMonitor from "@/components/SessionMonitor";
+
 export const metadata: Metadata = {
   title: {
     default: 'SCH Tracker Instalasi',
@@ -25,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={inter.className}>
+        <SessionMonitor />
         <main>{children}</main>
         <Toaster position="top-center" richColors />
       </body>

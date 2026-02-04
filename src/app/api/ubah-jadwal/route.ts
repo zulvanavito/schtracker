@@ -215,10 +215,21 @@ export async function POST(request: Request) {
           dataToUpdate.tanggal_instalasi,
           dataToUpdate.pukul_instalasi
         );
-        const endTime = formatDateTimeForGoogle(
-          dataToUpdate.tanggal_instalasi,
-          addHours(dataToUpdate.pukul_instalasi, 2)
+
+        // Hitung duration dinamis
+        const durationMs = calculateDurationInMs(
+          dataToUpdate.tipe_langganan,
+          dataToUpdate.tipe_outlet
         );
+
+        // Calculate End Time
+        const startDateObj = new Date(startTime.isoString);
+        const endDateObj = new Date(startDateObj.getTime() + durationMs);
+
+        const endTime = {
+          isoString: endDateObj.toISOString(),
+          timeZone: "Asia/Makassar",
+        };
 
         // 🎨 DEFAULT COLOR: FLAMINGO (colorId: '4') - SAMA DENGAN simpan-jadwal
         const colorId = "4";

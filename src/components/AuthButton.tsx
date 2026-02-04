@@ -60,6 +60,7 @@ export default function AuthButton() {
   
 
   const handleSignOut = async () => {
+    localStorage.setItem("is_logging_out", "true");
     await supabase.auth.signOut();
   };
 
@@ -70,6 +71,32 @@ export default function AuthButton() {
   return user ? (
     <div className="flex items-center gap-4">
       <span className="text-sm">Hi, {user.email}</span>
+      <Button 
+        onClick={async () => {
+             const { data: { session } } = await supabase.auth.getSession();
+             if (session) {
+                 const expiresAt = new Date(session.expires_at! * 1000);
+                 const now = new Date();
+                 const diffMs = expiresAt.getTime() - now.getTime();
+                 const diffMins = Math.round(diffMs / 60000);
+                 
+                 alert(
+                    `Token Status: VALID\n` +
+                    `Expires at: ${expiresAt.toLocaleTimeString()}\n` +
+                    `Remaining: ~${diffMins} minutes\n\n` + 
+                    `(Auto-refresh is active)`
+                 );
+                 console.log("Current Session:", session);
+             } else {
+                 alert("No active session found!");
+             }
+        }} 
+        variant="ghost" 
+        size="sm"
+        className="text-xs text-slate-400 hover:text-blue-500"
+      >
+        Check Token
+      </Button>
       <Button onClick={handleSignOut} variant="outline" size="sm">
         <LogOut className="w-4 h-4 mr-2" />
         Logout
