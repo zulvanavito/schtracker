@@ -799,8 +799,8 @@ export default function HalamanTabel() {
             </div>
         </div>
 
-        {/* Data Table */}
-        <div className="glass-card border-0 overflow-hidden shadow-xl ring-1 ring-black/5">
+        {/* Data Table (Desktop) */}
+        <div className="hidden md:block glass-card border-0 overflow-hidden shadow-xl ring-1 ring-black/5">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-slate-50/50">
@@ -859,7 +859,7 @@ export default function HalamanTabel() {
                       </TableCell>
                        <TableCell className="py-4">
                         <div className="flex flex-col items-start gap-1.5">
-                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wideHP border ${
                                 jadwal.tipe_outlet === "Online" 
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
                                 : "bg-amber-50 text-amber-600 border-amber-100"
@@ -898,7 +898,92 @@ export default function HalamanTabel() {
               </TableBody>
             </Table>
           </div>
-          
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+            {currentItems.length > 0 ? (
+                currentItems.map((jadwal) => (
+                    <div key={jadwal.id} className="glass-card p-5 space-y-4 relative overflow-hidden">
+                         {/* Status Stripe */}
+                         <div className={`absolute top-0 left-0 w-1 h-full ${
+                             jadwal.tipe_outlet === "Online" ? "bg-emerald-500" : "bg-amber-500"
+                         }`} />
+
+                         {/* Header */}
+                         <div className="flex justify-between items-start pl-2">
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-lg leading-tight">{jadwal.nama_outlet}</h3>
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                                        jadwal.tipe_outlet === "Online" 
+                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                                        : "bg-amber-50 text-amber-600 border-amber-100"
+                                    }`}>
+                                        {jadwal.tipe_outlet}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">
+                                        {jadwal.tipe_langganan}
+                                    </span>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={() => openModal(jadwal)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 rounded-full hover:bg-slate-100 text-slate-400"
+                            >
+                                <MessageSquare className="h-4 w-4" />
+                            </Button>
+                         </div>
+                         
+                         {/* Content */}
+                         <div className="grid grid-cols-2 gap-4 pl-2">
+                            <div className="space-y-1">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" /> Date
+                                </p>
+                                <p className="text-sm font-semibold text-slate-700">{formatTanggal(jadwal.tanggal_instalasi)}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" /> Time (WITA)
+                                </p>
+                                <p className="text-sm font-semibold text-slate-700">{formatWaktuWITA(jadwal.pukul_instalasi)}</p>
+                            </div>
+                            <div className="space-y-1 col-span-2 border-t border-slate-50 pt-3">
+                                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                    <User className="h-3 w-3" /> Contact Info
+                                </p>
+                                <div className="flex justify-between items-center">
+                                    <p className="text-sm font-medium text-slate-700">{jadwal.nama_owner}</p>
+                                    <p className="text-xs font-mono text-slate-500">{jadwal.no_telepon}</p>
+                                </div>
+                            </div>
+                         </div>
+
+                         {/* Footer / IDs */}
+                         <div className="pl-2 pt-2 flex flex-wrap gap-2">
+                            {jadwal.no_invoice && (
+                                <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">
+                                    {jadwal.no_invoice}
+                                </span>
+                            )}
+                             {jadwal.sch_leads && (
+                                <span className="text-[10px] font-mono text-blue-400 bg-blue-50/50 px-2 py-1 rounded">
+                                    {jadwal.sch_leads}
+                                </span>
+                            )}
+                         </div>
+                    </div>
+                ))
+            ) : (
+                <div className="glass-card p-10 flex flex-col items-center justify-center text-center opacity-60">
+                     <FileText className="h-10 w-10 text-slate-300 mb-3" />
+                     <p className="font-medium text-slate-500">No schedules found</p>
+                </div>
+            )}
+        </div>  
             <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -906,8 +991,7 @@ export default function HalamanTabel() {
                 totalItems={filteredJadwal.length}
                 itemsPerPage={itemsPerPage}
             />
-        </div>
-      </div>
+
 
        {/* Message Modal */}
        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -1157,6 +1241,7 @@ export default function HalamanTabel() {
             </DialogFooter>
         </DialogContent>
        </Dialog>
+    </div>
     </div>
   );
 }

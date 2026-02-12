@@ -377,9 +377,7 @@ export default function Home() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
           {/* Input Section */}
           <div
-            className={`transition-all duration-500 ease-in-out ${
-              currentStep > 1 ? "xl:opacity-40 xl:scale-95 blur-sm grayscale-[0.5]" : ""
-            }`}
+            className="transition-all duration-500 ease-in-out"
           >
             <Card className="glass-card border-0">
               <CardHeader className="border-b border-slate-100/50 pb-4">
@@ -437,9 +435,7 @@ Langganan: Starter`}
 
           {/* Form Section */}
           <div
-            className={`transition-all duration-500 ease-in-out ${
-              currentStep < 2 ? "xl:opacity-50 xl:scale-95 pointer-events-none" : "scale-100 opacity-100"
-            }`}
+            className="transition-all duration-500 ease-in-out"
           >
             <form onSubmit={handleSubmit}>
               <Card className={`glass-card border-0 h-full ${currentStep < 2 ? "ring-0" : "ring-4 ring-green-50"}`}>
