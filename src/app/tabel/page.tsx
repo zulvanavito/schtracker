@@ -237,6 +237,8 @@ export default function HalamanTabel() {
   const [generatedMessage, setGeneratedMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [selectedTimezone, setSelectedTimezone] = useState("WITA");
+  const [lastTemplateType, setLastTemplateType] = useState("");
   
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
@@ -304,6 +306,30 @@ export default function HalamanTabel() {
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("id-ID", { weekday: "long" });
   };
+
+  const convertTime = (time: string, zone: string) => {
+    if (!time) return "";
+    // Asumsi input time selalu WITA (UTC+8)
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (zone === "WIB") {
+      hours -= 1; // WITA to WIB (-1)
+    } else if (zone === "WIT") {
+      hours += 1; // WITA to WIT (+1)
+    }
+
+    // Handle overflow
+    if (hours < 0) hours += 24;
+    if (hours >= 24) hours -= 24;
+
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")} ${zone}`;
+  };
+
+  useEffect(() => {
+    if (isModalOpen && lastTemplateType && selectedJadwal) {
+      handleGenerateTemplate(lastTemplateType);
+    }
+  }, [selectedTimezone]);
 
   const handleDelete = async () => {
     if (!selectedJadwal) return;
@@ -528,7 +554,9 @@ export default function HalamanTabel() {
     let template = "";
     const { hari_instalasi, tanggal_instalasi, pukul_instalasi, nama_outlet, link_meet, alamat } = selectedJadwal;
     const tanggalFormatted = formatTanggal(tanggal_instalasi);
-    const waktuFormatted = formatWaktuWITA(pukul_instalasi);
+    const waktuFormatted = convertTime(pukul_instalasi, selectedTimezone);
+
+    setLastTemplateType(type);
 
     // Template logic (Simplified for brevity, same as before)
     // In real implementation, keep the full template strings
@@ -1030,7 +1058,24 @@ export default function HalamanTabel() {
                         )}
 
                         <div className="space-y-4">
-                            <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Choose Template</Label>
+                           <div className="flex items-center justify-between">
+                             <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Timezone</Label>
+                              <Select
+                                value={selectedTimezone}
+                                onValueChange={setSelectedTimezone}
+                              >
+                                <SelectTrigger className="w-[180px] h-9 rounded-lg border-slate-200 bg-white text-xs font-medium">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="WIB">WIB (Waktu Indonesia Barat)</SelectItem>
+                                  <SelectItem value="WITA">WITA (Waktu Indonesia Tengah)</SelectItem>
+                                  <SelectItem value="WIT">WIT (Waktu Indonesia Timur)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                           </div>
+
+                             <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Choose Template</Label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 {selectedJadwal?.tipe_outlet === "Online" ? (
                                     <>
