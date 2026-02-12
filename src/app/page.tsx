@@ -140,7 +140,6 @@ export default function Home() {
     }
   };
 
-  // handleTimeChange
   const handleTimeChange = (part: "hour" | "minute", value: string) => {
     const [currentHour = "09", currentMinute = "00"] =
       formData.pukul_instalasi.split(":");
@@ -153,7 +152,6 @@ export default function Home() {
     setFormData((prev) => ({ ...prev, pukul_instalasi: newTime }));
   };
 
-  // handleParse
   const handleParse = () => {
     const baris = rawText.split("\n");
     const dataTerurai: ParsedData = {
