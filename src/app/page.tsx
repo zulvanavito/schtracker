@@ -38,6 +38,8 @@ import {
   ArrowRight,
   CheckCircle2,
   ListRestart,
+  CreditCard,
+  Zap,
 } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabaseClient";
@@ -195,7 +197,7 @@ export default function Home() {
         link_meet: dataTerurai.tipe_outlet === "Offline" ? "" : prev.link_meet,
       }));
 
-      // Auto advance to step 2 after parsing
+      // No visual restriction update here needed anymore as logic is in render
       setCurrentStep(2);
 
       toast.success("Parsed Successfully!", {
@@ -310,30 +312,30 @@ export default function Home() {
     formData.pukul_instalasi.split(":");
 
   return (
-    <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-blue-50 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-blue-100 p-4 md:p-8 font-sans selection:bg-blue-100 selection:text-blue-900">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-10">
+        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-12">
           <div className="space-y-4">
-            <div className="flex items-center gap-4">
-               <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 ring-4 ring-blue-50">
-                <Sparkles className="h-7 w-7 text-white" />
+            <div className="flex items-center gap-4 group">
+               <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl shadow-xl shadow-blue-500/30 ring-4 ring-white/50 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <Sparkles className="h-8 w-8 text-white animate-pulse" />
               </div>
               <div>
-                <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 tracking-tight">
-                  Smart Parser
+                <h1 className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 tracking-tighter drop-shadow-sm">
+                  Smart<span className="text-blue-600">Parser</span>
                 </h1>
-                <p className="text-slate-500 text-lg font-medium">
-                  Transform raw text into structured schedules instantly
+                <p className="text-slate-500 text-lg font-medium tracking-wide">
+                  Intelligent Schedule Automation
                 </p>
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-4">
              <Button
               asChild
               variant="outline"
-              className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium"
+              className="glass-button gap-2 rounded-2xl h-12 px-6 border-white/40 text-slate-600 font-semibold hover:bg-white/60 hover:text-blue-700 hover:border-blue-200 hover:-translate-y-1 transition-all duration-300 shadow-sm"
             >
               <Link href="/tabel">
                 <FileText className="h-4 w-4" />
@@ -342,61 +344,64 @@ export default function Home() {
             </Button>
             <Button
               asChild
-              className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600"
+              className="glass-button gap-2 rounded-2xl h-12 px-6 border-white/40 text-slate-600 font-semibold hover:bg-white/60 hover:text-blue-700 hover:border-blue-200 hover:-translate-y-1 transition-all duration-300 shadow-sm"
             >
               <Link href="/jadwal">
                 <Calendar className="h-4 w-4" />
                 Calendar
               </Link>
             </Button>
-            <div className="pl-3 border-l border-slate-200">
+            <div className="pl-4 border-l-2 border-slate-200/50">
               <AuthButton />
             </div>
           </div>
         </header>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-10">
-          <div className="flex items-center gap-6 bg-white/60 backdrop-blur-md rounded-2xl px-6 py-3 shadow-sm border border-white/50">
-            <StepIndicator
-              number={1}
-              label="Paste Data"
-              isActive={currentStep === 1}
-              isCompleted={currentStep > 1}
-            />
-            <div className={`h-1 w-12 rounded-full ${currentStep > 1 ? "bg-green-500" : "bg-slate-200"}`} />
-            <StepIndicator
-              number={2}
-              label="Review & Save"
-              isActive={currentStep === 2}
-              isCompleted={currentStep > 2}
-            />
-          </div>
+        <div className="relative mb-16 hidden md:block">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 rounded-full -z-10 overflow-hidden">
+                <div 
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-700 ease-out"
+                    style={{ width: currentStep === 1 ? '50%' : '100%' }}
+                />
+            </div>
+            <div className="flex justify-between max-w-2xl mx-auto">
+                 <StepIndicator
+                  number={1}
+                  label="Input Raw Data"
+                  isActive={currentStep === 1}
+                  isCompleted={currentStep > 1}
+                />
+                 <StepIndicator
+                  number={2}
+                  label="Review & Confirm"
+                  isActive={currentStep === 2}
+                  isCompleted={currentStep > 2}
+                />
+            </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* Input Section */}
-          <div
-            className="transition-all duration-500 ease-in-out"
-          >
-            <Card className="glass-card border-0">
-              <CardHeader className="border-b border-slate-100/50 pb-4">
-                <CardTitle className="flex items-center gap-3 text-xl text-slate-800">
-                   <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
-                        <ListRestart className="h-5 w-5" />
+          <div className="xl:col-span-4 transition-all duration-500 ease-in-out">
+            <Card className="glass bg-white/40 backdrop-blur-xl border-white/40 shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500">
+              <CardHeader className="border-b border-white/30 pb-6 pt-6">
+                <CardTitle className="flex items-center gap-3 text-2xl font-bold text-slate-800">
+                   <div className="p-2.5 bg-blue-100/80 rounded-2xl text-blue-600 shadow-sm">
+                        <ListRestart className="h-6 w-6" />
                     </div>
-                  Step 1: Input Raw Data
+                  Raw Input
                 </CardTitle>
-                <CardDescription className="text-slate-500">
-                  Paste data from WhatsApp or Excel. Our AI-like parser will detect key info.
+                <CardDescription className="text-slate-500 text-base font-medium">
+                  Paste WhatsApp chat or Excel rows here.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <Textarea
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    rows={12}
+                    rows={15}
                     placeholder={`Expected Format:
 Nama Outlet
 Nama Owner
@@ -406,63 +411,73 @@ SCH/LEADS/001
 Jl. Example Address No. 123
 Tipe: Online
 Langganan: Starter`}
-                    className="resize-none rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300 min-h-[280px] font-mono text-sm leading-relaxed"
+                    className="resize-none rounded-2xl border-white/40 bg-white/40 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all duration-300 min-h-[350px] font-mono text-sm leading-relaxed text-slate-700 placeholder:text-slate-400 shadow-inner"
                   />
 
-                  <div className="bg-amber-50/80 border border-amber-200/50 rounded-xl p-4 flex gap-3">
-                    <Sparkles className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-4 items-start shadow-sm">
+                    <div className="p-2 bg-amber-100 rounded-xl rounded-tl-none">
+                        <Zap className="h-5 w-5 text-amber-600" />
+                    </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-amber-800">Pro Tip</p>
-                      <p className="text-xs text-amber-700 leading-relaxed">
-                        Ensure each data point (Name, Phone, Invoice, etc.) is on a new line for best accuracy.
+                      <p className="text-sm font-bold text-amber-900">Parsing Tip</p>
+                      <p className="text-xs text-amber-700/80 leading-relaxed font-medium">
+                        Use one line per data point for best results. Our AI works best with clear line breaks.
                       </p>
                     </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-slate-50/30 border-t border-slate-100/50 px-6 py-4">
+              <CardFooter className="bg-white/30 border-t border-white/30 px-6 py-6">
                 <Button
                   onClick={handleParse}
-                  className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300"
+                  className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 group"
                   disabled={!rawText.trim()}
                 >
-                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
-                  Auto Parse Data
+                  <Sparkles className="mr-2 h-5 w-5 group-hover:animate-ping" />
+                  Smart Parse
                 </Button>
               </CardFooter>
             </Card>
           </div>
 
           {/* Form Section */}
-          <div
-            className="transition-all duration-500 ease-in-out"
-          >
+          <div className="xl:col-span-8 transition-all duration-500 ease-in-out">
             <form onSubmit={handleSubmit}>
-              <Card className={`glass-card border-0 h-full ${currentStep < 2 ? "ring-0" : "ring-4 ring-green-50"}`}>
-                <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50 border-b border-emerald-100/50 pb-4">
-                  <CardTitle className="flex items-center gap-3 text-xl text-slate-800">
-                    <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600">
-                        <CheckCircle2 className="h-5 w-5" />
+              <Card className="glass bg-white/60 backdrop-blur-2xl border-white/60 shadow-2xl shadow-slate-200/50 rounded-3xl h-full overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-slate-50/80 to-blue-50/50 border-b border-white/50 pb-6 pt-6 backdrop-blur-sm">
+                  <div className="flex items-center justify-between">
+                     <CardTitle className="flex items-center gap-4 text-2xl font-bold text-slate-800">
+                        <div className="p-3 bg-emerald-100 rounded-2xl text-emerald-600 shadow-sm ring-4 ring-emerald-50">
+                            <CheckCircle2 className="h-6 w-6" />
+                        </div>
+                        <div>
+                            Review Information
+                            <span className="block text-sm font-medium text-slate-400 mt-1">Make sure everything is correct</span>
+                        </div>
+                    </CardTitle>
+                    <div className="hidden md:block px-4 py-2 bg-white/50 rounded-xl border border-white/50 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        Step 02
                     </div>
-                    Step 2: Verify & Save
-                  </CardTitle>
-                  <CardDescription className="text-slate-500">
-                    Review parsed data, add schedule time, and confirm.
-                  </CardDescription>
+                  </div>
                 </CardHeader>
-                <CardContent className="p-6 space-y-8">
+                <CardContent className="p-8 space-y-10">
                   {/* Informasi Outlet */}
-                  <div className="space-y-5">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <Building className="h-4 w-4" /> Outlet Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <section className="space-y-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="h-8 w-1 bg-blue-500 rounded-r-full" />
+                        <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <Building className="h-4 w-4 text-slate-400" /> Outlet Information
+                        </h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormInput
                         label="Nama Outlet"
                         name="nama_outlet"
                         value={formData.nama_outlet}
                         onChange={handleInputChange}
                         icon={<Building className="h-4 w-4" />}
+                        placeholder="e.g. Kopi Kenangan"
                       />
                       <FormInput
                         label="Nama Owner"
@@ -470,6 +485,7 @@ Langganan: Starter`}
                         value={formData.nama_owner}
                         onChange={handleInputChange}
                         icon={<User className="h-4 w-4" />}
+                        placeholder="e.g. Budi Santoso"
                       />
                       <FormInput
                         label="No Telepon"
@@ -477,6 +493,7 @@ Langganan: Starter`}
                         value={formData.no_telepon}
                         onChange={handleInputChange}
                         icon={<Phone className="h-4 w-4" />}
+                        placeholder="0812..."
                       />
                       <FormInput
                         label="No Invoice"
@@ -484,6 +501,7 @@ Langganan: Starter`}
                         value={formData.no_invoice}
                         onChange={handleInputChange}
                         icon={<FileText className="h-4 w-4" />}
+                        placeholder="INV/..."
                       />
                     </div>
                     <FormInput
@@ -492,25 +510,30 @@ Langganan: Starter`}
                       value={formData.alamat}
                       onChange={handleInputChange}
                       icon={<MapPin className="h-4 w-4" />}
+                      placeholder="Detailed address..."
                     />
                     <FormInput
                       label="SCH Leads"
                       name="sch_leads"
                       value={formData.sch_leads}
                       onChange={handleInputChange}
+                      placeholder="SCH/LEADS/..."
                     />
-                  </div>
+                  </section>
 
                   {/* Tipe & Langganan */}
-                  <div className="space-y-5">
-                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                      <ListRestart className="h-4 w-4" /> Classification
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
+                  <section className="space-y-6">
+                     <div className="flex items-center gap-3 mb-6">
+                        <div className="h-8 w-1 bg-purple-500 rounded-r-full" />
+                        <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-slate-400" /> Services
+                        </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
                         <Label
                             htmlFor="tipe_outlet"
-                            className="flex items-center gap-2 text-sm font-medium text-slate-700"
+                            className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1"
                         >
                             <Link2 className="h-4 w-4 text-blue-500" />
                             Tipe Outlet
@@ -523,12 +546,12 @@ Langganan: Starter`}
                             }
                             required
                         >
-                            <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                            <SelectTrigger className="h-12 rounded-2xl border-white/60 bg-white/50 hover:bg-white/80 transition-colors shadow-sm focus:ring-4 focus:ring-blue-100/50">
                             <SelectValue placeholder="Select type" />
                             </SelectTrigger>
-                            <SelectContent>
-                            <SelectItem value="Online">Online</SelectItem>
-                            <SelectItem value="Offline">Offline</SelectItem>
+                            <SelectContent className="rounded-2xl border-white/80 bg-white/90 backdrop-blur-xl">
+                            <SelectItem value="Online" className="rounded-xl focus:bg-blue-50 cursor-pointer">Online</SelectItem>
+                            <SelectItem value="Offline" className="rounded-xl focus:bg-blue-50 cursor-pointer">Offline</SelectItem>
                             </SelectContent>
                         </Select>
                         </div>
@@ -537,82 +560,90 @@ Langganan: Starter`}
                         name="tipe_langganan"
                         value={formData.tipe_langganan}
                         onChange={handleInputChange}
+                        placeholder="Starter / Advance..."
                         />
                     </div>
-                  </div>
+                  </section>
 
                   {/* Jadwal Instalasi */}
-                  <div className="pt-6 border-t border-slate-100">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 mb-5">
-                      <Clock className="h-4 w-4" /> Scheduling
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                      <FormInput
-                        label="Hari"
-                        name="hari_instalasi"
-                        value={formData.hari_instalasi}
-                        onChange={handleInputChange}
-                        required
-                      />
-                      <div className="space-y-1.5">
-                        <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                          <Calendar className="h-4 w-4 text-emerald-500" />
-                          Tanggal
-                        </Label>
-                        <DatePicker
-                          date={formData.tanggal_instalasi}
-                          onSelect={handleDateChange}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                          <Clock className="h-4 w-4 text-purple-500" />
-                          Waktu
-                        </Label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={currentHour}
-                            onValueChange={(value) =>
-                              handleTimeChange("hour", value)
-                            }
-                            required
-                          >
-                            <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
-                              <SelectValue placeholder="HH" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                              {hours.map((hour) => (
-                                <SelectItem key={hour} value={hour}>
-                                  {hour}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={currentMinute}
-                            onValueChange={(value) =>
-                              handleTimeChange("minute", value)
-                            }
-                            required
-                          >
-                            <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
-                              <SelectValue placeholder="MM" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {minutes.map((minute) => (
-                                <SelectItem key={minute} value={minute}>
-                                  {minute}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+                  <section className="space-y-6 pt-2">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="h-8 w-1 bg-emerald-500 rounded-r-full" />
+                        <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-slate-400" /> Installation Schedule
+                        </h3>
                     </div>
-                  </div>
+                    <div className="p-6 bg-gradient-to-br from-white/60 to-slate-50/60 rounded-[2rem] border border-white/60 shadow-inner">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <FormInput
+                            label="Hari"
+                            name="hari_instalasi"
+                            value={formData.hari_instalasi}
+                            onChange={handleInputChange}
+                            required
+                            placeholder="Auto-filled"
+                        />
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1">
+                            <Calendar className="h-4 w-4 text-emerald-500" />
+                            Tanggal
+                            </Label>
+                            <DatePicker
+                            date={formData.tanggal_instalasi}
+                            onSelect={handleDateChange}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1">
+                            <Clock className="h-4 w-4 text-purple-500" />
+                            Waktu
+                            </Label>
+                            <div className="flex gap-2">
+                            <Select
+                                value={currentHour}
+                                onValueChange={(value) =>
+                                handleTimeChange("hour", value)
+                                }
+                                required
+                            >
+                                <SelectTrigger className="h-12 rounded-2xl border-white/60 bg-white/80 shadow-sm">
+                                <SelectValue placeholder="HH" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-60 rounded-xl">
+                                {hours.map((hour) => (
+                                    <SelectItem key={hour} value={hour} className="rounded-lg focus:bg-slate-100">
+                                    {hour}
+                                    </SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <span className="flex items-center text-slate-400 font-bold">:</span>
+                            <Select
+                                value={currentMinute}
+                                onValueChange={(value) =>
+                                handleTimeChange("minute", value)
+                                }
+                                required
+                            >
+                                <SelectTrigger className="h-12 rounded-2xl border-white/60 bg-white/80 shadow-sm">
+                                <SelectValue placeholder="MM" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                {minutes.map((minute) => (
+                                    <SelectItem key={minute} value={minute} className="rounded-lg focus:bg-slate-100">
+                                    {minute}
+                                    </SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                  </section>
 
                   {/* Link Meet */}
-                  <div className="pt-4 border-t border-slate-100">
+                  <div className="pt-2">
                     <FormInput
                       label={
                         formData.tipe_outlet === "Online"
@@ -624,25 +655,26 @@ Langganan: Starter`}
                       onChange={handleInputChange}
                       disabled={true}
                       icon={<Link2 className="h-4 w-4" />}
+                      placeholder="Will be generated after saving..."
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-slate-50/30 border-t border-slate-100 px-6 py-6">
+                <CardFooter className="bg-white/40 border-t border-white/40 px-8 py-8 backdrop-blur-md">
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full h-14 text-lg font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/25"
+                    className="w-full h-16 text-lg font-bold rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 group"
                     disabled={isSubmitting || !formData.tanggal_instalasi}
                   >
                      {isSubmitting ? (
-                        <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                            Saving...
+                        <div className="flex items-center gap-3">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            Saving Schedule...
                         </div>
                      ) : (
-                        <div className="flex items-center gap-2">
-                            <Save className="h-5 w-5" />
-                            Save Schedule & Generate Link
+                        <div className="flex items-center gap-3">
+                            <Save className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                            Confirm & Save Schedule
                         </div>
                      )}
                   </Button>
@@ -671,25 +703,23 @@ function StepIndicator({
   isCompleted,
 }: StepIndicatorProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex flex-col items-center gap-3 relative z-10 transition-all duration-500 ${isActive || isCompleted ? 'scale-110' : 'scale-100 opacity-70'}`}>
       <div
-        className={`flex items-center justify-center w-8 h-8 rounded-full border-2 font-bold text-sm transition-all shadow-sm ${
+        className={`flex items-center justify-center w-12 h-12 rounded-full border-4 font-black text-lg transition-all duration-500 shadow-xl ${
           isCompleted
-            ? "bg-emerald-500 border-emerald-500 text-white shadow-emerald-200"
+            ? "bg-emerald-500 border-emerald-100 text-white shadow-emerald-500/30"
             : isActive
-            ? "bg-blue-600 border-blue-600 text-white shadow-blue-200"
+            ? "bg-blue-600 border-blue-100 text-white shadow-blue-500/30"
             : "bg-white border-slate-200 text-slate-300"
         }`}
       >
-        {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : number}
+        {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : number}
       </div>
-      <span
-        className={`font-semibold tracking-wide transition-colors ${
-          isActive || isCompleted ? "text-slate-800" : "text-slate-400"
-        }`}
-      >
+      <div className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm transition-all duration-500 ${
+          isActive || isCompleted ? "bg-white/80 text-slate-800 shadow-sm" : "bg-transparent text-slate-400"
+      }`}>
         {label}
-      </span>
+      </div>
     </div>
   );
 }
@@ -704,6 +734,7 @@ interface FormInputProps {
   required?: boolean;
   disabled?: boolean;
   icon?: React.ReactNode;
+  placeholder?: string;
 }
 
 function FormInput({
@@ -715,12 +746,13 @@ function FormInput({
   required = false,
   disabled = false,
   icon,
+  placeholder,
 }: FormInputProps) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2 group">
       <Label
         htmlFor={name}
-        className="flex items-center gap-2 text-sm font-medium text-slate-700"
+        className="flex items-center gap-2 text-sm font-bold text-slate-700 ml-1 transition-colors group-hover:text-blue-600"
       >
         {icon}
         {label}
@@ -733,7 +765,8 @@ function FormInput({
         type={type}
         required={required}
         disabled={disabled}
-        className="rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300 shadow-sm"
+        placeholder={placeholder}
+        className="h-12 rounded-2xl border-white/60 bg-white/50 hover:bg-white/80 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 transition-all duration-300 shadow-sm placeholder:text-slate-300 text-slate-800 font-medium"
       />
     </div>
   );
