@@ -504,9 +504,14 @@ export default function HalamanJadwal() {
   };
 
   const handleEditDateChange = (date: Date | undefined) => {
+    let hari = "";
+    if (date) {
+      hari = date.toLocaleDateString("id-ID", { weekday: "long" });
+    }
     setEditFormData((prev) => ({
       ...prev,
       tanggal_instalasi: date,
+      hari_instalasi: hari,
     }));
   };
 

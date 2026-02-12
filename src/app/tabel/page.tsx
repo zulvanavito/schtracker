@@ -246,9 +246,18 @@ export default function HalamanTabel() {
 
   const handleEditClick = () => {
     if (!selectedJadwal) return;
+    
+    let tanggal: Date | undefined;
+    if (selectedJadwal.tanggal_instalasi) {
+        const parsed = new Date(selectedJadwal.tanggal_instalasi);
+        if (!isNaN(parsed.getTime())) {
+            tanggal = parsed;
+        }
+    }
+
     setEditFormData({
       ...selectedJadwal,
-      tanggal_instalasi: new Date(selectedJadwal.tanggal_instalasi),
+      tanggal_instalasi: tanggal,
     });
     setIsEditing(true);
   };
@@ -372,7 +381,13 @@ export default function HalamanTabel() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editFormData || !editFormData.tanggal_instalasi) return;
+    if (!editFormData) return;
+    
+    // Validate date before proceeding
+    if (editFormData.tanggal_instalasi && isNaN(editFormData.tanggal_instalasi.getTime())) {
+        toast.error("Tanggal instalasi tidak valid");
+        return;
+    }
 
     const promise = () =>
       new Promise(async (resolve, reject) => {
@@ -387,7 +402,7 @@ export default function HalamanTabel() {
           };
 
           const response = await fetch("/api/ubah-jadwal", {
-            method: "PUT",
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${session.access_token}`,
@@ -395,7 +410,11 @@ export default function HalamanTabel() {
             body: JSON.stringify(dataToSend),
           });
 
-          if (!response.ok) throw new Error("Update failed");
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("DEBUG: Server error response:", errorData);
+            throw new Error(errorData.error || `Update failed with status ${response.status}`);
+          }
 
           fetchJadwal();
           setIsEditing(false);
@@ -409,7 +428,7 @@ export default function HalamanTabel() {
           
           resolve("Update successful");
         } catch (err) {
-            console.error(err);
+            console.error("DEBUG: Update error details:", err);
           reject(err);
         }
       });
