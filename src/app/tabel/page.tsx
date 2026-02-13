@@ -48,7 +48,12 @@ import {
   Edit,
   Trash2,
   Save,
-  MapPin
+  MapPin,
+  PlayCircle,
+  Bell,
+  XCircle,
+  CalendarCheck,
+  Circle
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -83,6 +88,7 @@ interface Jadwal {
   hari_instalasi: string;
   link_meet: string;
   log_pesan: LogPesan[];
+  status?: string;
   created_at?: string;
 }
 
@@ -100,6 +106,7 @@ interface EditFormData {
   tanggal_instalasi: Date | undefined;
   pukul_instalasi: string;
   link_meet: string;
+  status?: string;
 }
 
 interface UpdateRequestBody extends Omit<EditFormData, "tanggal_instalasi"> {
@@ -435,8 +442,53 @@ export default function HalamanTabel() {
 
     toast.promise(promise(), {
       loading: "Updating...",
-      success: "Schedule updated successfully!",
       error: "Failed to update schedule",
+    });
+  };
+
+  const handleQuickStatusUpdate = async (id: number, newStatus: string) => {
+    // Optimistic Update
+    setJadwalList((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, status: newStatus } : item
+      )
+    );
+
+    const promise = () =>
+      new Promise(async (resolve, reject) => {
+        try {
+          const {
+            data: { session },
+            error: sessionError,
+          } = await supabase.auth.getSession();
+          if (sessionError || !session) throw new Error("Unauthorized");
+
+          const response = await fetch("/api/ubah-jadwal", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              id,
+              status: newStatus,
+              google_access_token: session.provider_token || undefined,
+            }),
+          });
+
+          if (!response.ok) throw new Error("Update failed");
+          resolve("Status updated");
+        } catch (err) {
+            // Revert on error (optional, but good practice)
+           fetchJadwal();
+           reject(err);
+        }
+      });
+
+    toast.promise(promise(), {
+      loading: "Updating status...",
+      success: "Status updated",
+      error: "Failed to update status",
     });
   };
 
@@ -856,6 +908,7 @@ export default function HalamanTabel() {
                   <TableHead className="font-bold text-slate-500 uppercase text-xs tracking-wider">Date & Time</TableHead>
                   <TableHead className="font-bold text-slate-500 uppercase text-xs tracking-wider">Details</TableHead>
                   <TableHead className="font-bold text-slate-500 uppercase text-xs tracking-wider">Classification</TableHead>
+                  <TableHead className="font-bold text-slate-500 uppercase text-xs tracking-wider">Status</TableHead>
                    <TableHead className="font-bold text-slate-500 uppercase text-xs tracking-wider">Contact</TableHead>
                 </TableRow>
               </TableHeader>
@@ -904,7 +957,7 @@ export default function HalamanTabel() {
                               </div>
                          </div>
                       </TableCell>
-                       <TableCell className="py-4">
+                      <TableCell className="py-4">
                         <div className="flex flex-col items-start gap-1.5">
                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wideHP border ${
                                 jadwal.tipe_outlet === "Online" 
@@ -917,6 +970,40 @@ export default function HalamanTabel() {
                                 {jadwal.tipe_langganan}
                             </span>
                         </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                         <div className="relative">
+                            <Select
+                                value={jadwal.status || "On Going"}
+                                onValueChange={(val) => handleQuickStatusUpdate(jadwal.id, val)}
+                            >
+                                <SelectTrigger className={`w-[160px] h-9 text-[11px] font-bold uppercase tracking-wide border-0 ring-1 ring-inset focus:ring-2 transition-all rounded-full pl-3 pr-2 gap-2 shadow-sm ${
+                                    jadwal.status === "On Going" ? "bg-blue-50 text-blue-700 ring-blue-200 hover:bg-blue-100" :
+                                    jadwal.status === "Follow UP" ? "bg-purple-50 text-purple-700 ring-purple-200 hover:bg-purple-100" :
+                                    jadwal.status === "Fix Schedule" ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100" :
+                                    jadwal.status === "Reject" ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100" :
+                                    jadwal.status === "Nomor Sales" ? "bg-orange-50 text-orange-700 ring-orange-200 hover:bg-orange-100" :
+                                    "bg-slate-50 text-slate-700 ring-slate-200 hover:bg-slate-100"
+                                }`}>
+                                     <div className="flex items-center gap-2 truncate">
+                                        {jadwal.status === "On Going" ? <PlayCircle className="h-3.5 w-3.5" /> :
+                                         jadwal.status === "Follow UP" ? <Bell className="h-3.5 w-3.5" /> :
+                                         jadwal.status === "Fix Schedule" ? <CalendarCheck className="h-3.5 w-3.5" /> :
+                                         jadwal.status === "Reject" ? <XCircle className="h-3.5 w-3.5" /> :
+                                         jadwal.status === "Nomor Sales" ? <Phone className="h-3.5 w-3.5" /> :
+                                         <Circle className="h-3.5 w-3.5" />}
+                                        <SelectValue placeholder="Status" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="min-w-[160px]">
+                                    <SelectItem value="On Going"><div className="flex items-center gap-2"><PlayCircle className="h-4 w-4 text-blue-500"/> On Going</div></SelectItem>
+                                    <SelectItem value="Follow UP"><div className="flex items-center gap-2"><Bell className="h-4 w-4 text-purple-500"/> Follow UP</div></SelectItem>
+                                    <SelectItem value="Fix Schedule"><div className="flex items-center gap-2"><CalendarCheck className="h-4 w-4 text-emerald-500"/> Fix Schedule</div></SelectItem>
+                                    <SelectItem value="Reject"><div className="flex items-center gap-2"><XCircle className="h-4 w-4 text-red-500"/> Reject</div></SelectItem>
+                                    <SelectItem value="Nomor Sales"><div className="flex items-center gap-2"><Phone className="h-4 w-4 text-orange-500"/> Nomor Sales</div></SelectItem>
+                                </SelectContent>
+                            </Select>
+                         </div>
                       </TableCell>
                       <TableCell className="py-4">
                         <div className="flex flex-col gap-1 text-sm">
@@ -971,6 +1058,45 @@ export default function HalamanTabel() {
                                     </span>
                                     <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">
                                         {jadwal.tipe_langganan}
+                                    </span>
+                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                                        jadwal.status === "On Going" ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                        jadwal.status === "Follow UP" ? "bg-purple-50 text-purple-600 border-purple-100" :
+                                        jadwal.status === "Fix Schedule" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                        jadwal.status === "Reject" ? "bg-red-50 text-red-600 border-red-100" :
+                                        jadwal.status === "Nomor Sales" ? "bg-orange-50 text-orange-600 border-orange-100" :
+                                        "bg-slate-50 text-slate-600 border-slate-100"
+                                     }`}>
+                                        <Select
+                                            value={jadwal.status || "On Going"}
+                                            onValueChange={(val) => handleQuickStatusUpdate(jadwal.id, val)}
+                                        >
+                                            <SelectTrigger className={`h-6 text-[10px] font-bold uppercase tracking-wide border-0 ring-0 focus:ring-0 bg-transparent p-0 gap-1.5 ${
+                                                jadwal.status === "On Going" ? "text-blue-700" :
+                                                jadwal.status === "Follow UP" ? "text-purple-700" :
+                                                jadwal.status === "Fix Schedule" ? "text-emerald-700" :
+                                                jadwal.status === "Reject" ? "text-red-700" :
+                                                jadwal.status === "Nomor Sales" ? "text-orange-700" :
+                                                "text-slate-700"
+                                            }`}>
+                                                 <div className="flex items-center gap-1.5">
+                                                    {jadwal.status === "On Going" ? <PlayCircle className="h-3 w-3" /> :
+                                                    jadwal.status === "Follow UP" ? <Bell className="h-3 w-3" /> :
+                                                    jadwal.status === "Fix Schedule" ? <CalendarCheck className="h-3 w-3" /> :
+                                                    jadwal.status === "Reject" ? <XCircle className="h-3 w-3" /> :
+                                                    jadwal.status === "Nomor Sales" ? <Phone className="h-3 w-3" /> :
+                                                    <Circle className="h-3 w-3" />}
+                                                    <SelectValue placeholder="Status" />
+                                                </div>
+                                            </SelectTrigger>
+                                             <SelectContent>
+                                                <SelectItem value="On Going"><div className="flex items-center gap-2"><PlayCircle className="h-4 w-4 text-blue-500"/> On Going</div></SelectItem>
+                                                <SelectItem value="Follow UP"><div className="flex items-center gap-2"><Bell className="h-4 w-4 text-purple-500"/> Follow UP</div></SelectItem>
+                                                <SelectItem value="Fix Schedule"><div className="flex items-center gap-2"><CalendarCheck className="h-4 w-4 text-emerald-500"/> Fix Schedule</div></SelectItem>
+                                                <SelectItem value="Reject"><div className="flex items-center gap-2"><XCircle className="h-4 w-4 text-red-500"/> Reject</div></SelectItem>
+                                                <SelectItem value="Nomor Sales"><div className="flex items-center gap-2"><Phone className="h-4 w-4 text-orange-500"/> Nomor Sales</div></SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </span>
                                 </div>
                             </div>
@@ -1168,6 +1294,7 @@ export default function HalamanTabel() {
                             {/* CLASSIFICATION */}
                             <div className="space-y-5">
                                 <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Classification</h4>
+                                
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
                                         <Link2 className="h-4 w-4 text-blue-500" /> Tipe Outlet
