@@ -17,7 +17,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Link2
+  Link2,
 } from "lucide-react";
 
 import { calculateDurationInMs, formatSchLeadsToUrl } from "@/lib/utils";
@@ -176,6 +176,16 @@ export default function ActivityPage() {
             <Link href="/jadwal">
               <Calendar className="h-4 w-4" />
               Kalender
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/todo">
+              <FileText className="h-4 w-4" />
+              To-Do List
             </Link>
           </Button>
           <Button

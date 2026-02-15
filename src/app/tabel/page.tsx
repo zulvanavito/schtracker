@@ -794,6 +794,16 @@ export default function HalamanTabel() {
           </Button>
           <Button
             asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/todo">
+              <FileText className="h-4 w-4" />
+              To-Do
+            </Link>
+          </Button>
+          <Button
+            asChild
             className="gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm shadow-blue-200 transition-all"
           >
             <Link href="/">

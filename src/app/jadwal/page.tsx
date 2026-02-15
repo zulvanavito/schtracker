@@ -570,6 +570,16 @@ export default function HalamanJadwal() {
           </Button>
           <Button
             asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/todo">
+              <FileText className="h-4 w-4" />
+              To-Do
+            </Link>
+          </Button>
+          <Button
+            asChild
             className="gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300 font-semibold"
           >
             <Link href="/">

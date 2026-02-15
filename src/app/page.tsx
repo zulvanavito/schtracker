@@ -349,6 +349,16 @@ export default function Home() {
             variant="outline"
             className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
           >
+            <Link href="/todo">
+              <FileText className="h-4 w-4" />
+              To-Do
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+          >
             <Link href="/activity">
               <MonitorPlay className="h-4 w-4" />
               Activity
