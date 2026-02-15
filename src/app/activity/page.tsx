@@ -32,6 +32,19 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface Jadwal {
   id: number;
@@ -54,6 +67,7 @@ export default function ActivityPage() {
     onlineCount: 0,
     offlineCount: 0,
   });
+  const [subscriptionStats, setSubscriptionStats] = useState<{ name: string; value: number }[]>([]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,16 +113,28 @@ export default function ActivityPage() {
       }
     });
 
-    const onlineHours = onlineMs / (1000 * 60 * 60);
-    const offlineHours = offlineMs / (1000 * 60 * 60);
-
     setStats({
-      onlineHours,
-      offlineHours,
-      totalHours: onlineHours + offlineHours,
+      onlineHours: onlineMs / (1000 * 60 * 60),
+      offlineHours: offlineMs / (1000 * 60 * 60),
+      totalHours: (onlineMs + offlineMs) / (1000 * 60 * 60),
       onlineCount,
       offlineCount,
     });
+    
+    // Process subscription stats
+    const subCounts: Record<string, number> = {};
+    fixScheduleItems.forEach(item => {
+        const type = item.tipe_langganan || "Unknown";
+        subCounts[type] = (subCounts[type] || 0) + 1;
+    });
+    
+    const subStatsArray = Object.entries(subCounts).map(([name, value]) => ({
+        name,
+        value
+    })).sort((a, b) => b.value - a.value);
+    
+    setSubscriptionStats(subStatsArray);
+
     setData(fixScheduleItems);
   };
 
@@ -234,6 +260,73 @@ export default function ActivityPage() {
               </CardContent>
            </Card>
         </div>
+
+        {/* Charts Section */}
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Outlet Distribution Chart */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-4">Distribusi Outlet</h3>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Online", value: stats.onlineCount },
+                        { name: "Offline", value: stats.offlineCount },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      <Cell key="cell-0" fill="#3b82f6" /> {/* Blue-500 */}
+                      <Cell key="cell-1" fill="#6366f1" /> {/* Indigo-500 */}
+                    </Pie>
+                    <Tooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Subscription Distribution Chart */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-4">Tipe Langganan</h3>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={subscriptionStats}
+                    layout="vertical"
+                    margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                    <XAxis type="number" hide />
+                    <YAxis 
+                        dataKey="name" 
+                        type="category" 
+                        tick={{ fontSize: 11, fill: '#64748b' }} 
+                        width={80}
+                    />
+                    <Tooltip 
+                        cursor={{ fill: '#f1f5f9' }}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]}>
+                        {subscriptionStats.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3b82f6' : '#6366f1'} />
+                        ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Info Alert */}
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex gap-4 items-start mb-8">
