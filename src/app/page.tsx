@@ -40,9 +40,11 @@ import {
   ListRestart,
   CreditCard,
   Zap,
+  MonitorPlay,
 } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabaseClient";
+import Header from "@/components/Header";
 
 interface FormData {
   nama_outlet: string;
@@ -313,47 +315,46 @@ export default function Home() {
     <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-blue-100 p-4 md:p-8 font-sans selection:bg-blue-100 selection:text-blue-900">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-12">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 group">
-               <div className="p-4 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-3xl shadow-xl shadow-blue-500/30 ring-4 ring-white/50 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                <Sparkles className="h-8 w-8 text-white animate-pulse" />
-              </div>
-              <div>
-                <h1 className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 tracking-tighter drop-shadow-sm">
-                  Smart<span className="text-blue-600">Parser</span>
-                </h1>
-                <p className="text-slate-500 text-lg font-medium tracking-wide">
-                  Intelligent Schedule Automation
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-             <Button
-              asChild
-              variant="outline"
-              className="glass-button gap-2 rounded-2xl h-12 px-6 border-white/40 text-slate-600 font-semibold hover:bg-white/60 hover:text-blue-700 hover:border-blue-200 hover:-translate-y-1 transition-all duration-300 shadow-sm"
-            >
-              <Link href="/tabel">
-                <FileText className="h-4 w-4" />
-                Data Table
-              </Link>
-            </Button>
-            <Button
-              asChild
-              className="glass-button gap-2 rounded-2xl h-12 px-6 border-white/40 text-slate-600 font-semibold hover:bg-white/60 hover:text-blue-700 hover:border-blue-200 hover:-translate-y-1 transition-all duration-300 shadow-sm"
-            >
-              <Link href="/jadwal">
-                <Calendar className="h-4 w-4" />
-                Calendar
-              </Link>
-            </Button>
-            <div className="pl-4 border-l-2 border-slate-200/50">
-              <AuthButton />
-            </div>
-          </div>
-        </header>
+        <Header
+          title={
+            <>
+              Smart<span className="text-blue-600">Parser</span>
+            </>
+          }
+          subtitle="Intelligent Schedule Automation"
+          icon={<Sparkles className="h-8 w-8" />}
+        >
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+          >
+            <Link href="/tabel">
+              <FileText className="h-4 w-4" />
+              Data Table
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+          >
+            <Link href="/jadwal">
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+          >
+            <Link href="/activity">
+              <MonitorPlay className="h-4 w-4" />
+              Activity
+            </Link>
+          </Button>
+        </Header>
 
         {/* Progress Steps */}
         <div className="relative mb-16 hidden md:block">

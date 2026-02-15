@@ -53,8 +53,10 @@ import {
   Bell,
   XCircle,
   CalendarCheck,
-  Circle
+  Circle,
+  FileStack, 
 } from "lucide-react";
+import Header from "@/components/Header";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
@@ -218,6 +220,7 @@ export default function HalamanTabel() {
   const [error, setError] = useState<string | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [filterTipe, setFilterTipe] = useState<string>("semua");
+  const [filterStatus, setFilterStatus] = useState<string>("semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"terbaru" | "tanggal">("terbaru");
 
@@ -482,6 +485,10 @@ export default function HalamanTabel() {
           return false;
         }
 
+        if (filterStatus !== "semua" && jadwal.status !== filterStatus) {
+            return false;
+        }
+
         if (searchQuery.trim() === "") {
           return true;
         }
@@ -517,7 +524,7 @@ export default function HalamanTabel() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterTipe, searchQuery, sortBy]);
+  }, [filterTipe, filterStatus, searchQuery, sortBy]);
 
   const checkAndRefreshSession = async () => {
     try {
@@ -760,37 +767,41 @@ export default function HalamanTabel() {
     <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-blue-50 p-4 md:p-8 font-sans">
       <div className="max-w-[1400px] mx-auto">
         {/* Header */}
-        {/* Header */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-             <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Data Management</h1>
-             <p className="text-slate-500 text-sm mt-1">Manage installation records and communications</p>
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-             <Button
-              asChild
-              variant="outline"
-              className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
-            >
-              <Link href="/jadwal">
-                <Calendar className="h-4 w-4" />
-                Calendar
-              </Link>
-            </Button>
-            <Button
-              asChild
-              className="flex-1 md:flex-none gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm shadow-blue-200 transition-all"
-            >
-              <Link href="/">
-                <Sparkles className="h-4 w-4" />
-                New Schedule
-              </Link>
-            </Button>
-            <div className="hidden md:block pl-3 border-l border-slate-200">
-              <AuthButton />
-            </div>
-          </div>
-        </header>
+        <Header
+          title="Data Management"
+          subtitle="Manage installation records and communications"
+          icon={<FileStack className="h-8 w-8" />}
+        >
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/jadwal">
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/activity">
+              <MonitorPlay className="h-4 w-4" />
+              Activity
+            </Link>
+          </Button>
+          <Button
+            asChild
+            className="gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm shadow-blue-200 transition-all"
+          >
+            <Link href="/">
+              <Sparkles className="h-4 w-4" />
+              New Schedule
+            </Link>
+          </Button>
+        </Header>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
@@ -861,6 +872,32 @@ export default function HalamanTabel() {
                         <option value="semua">All Types</option>
                         <option value="Online">Online Only</option>
                         <option value="Offline">Offline Only</option>
+                    </select>
+                    <ChevronLeft className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 rotate-[-90deg] pointer-events-none" />
+                </div>
+
+                <div className="relative w-full sm:w-auto">
+                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 flex items-center justify-center">
+                        <div className={`w-2 h-2 rounded-full ${
+                             filterStatus === "On Going" ? "bg-blue-500" :
+                             filterStatus === "Follow UP" ? "bg-purple-500" :
+                             filterStatus === "Fix Schedule" ? "bg-emerald-500" :
+                             filterStatus === "Reject" ? "bg-red-500" :
+                             filterStatus === "Nomor Sales" ? "bg-orange-500" :
+                             "bg-slate-400"
+                        }`} />
+                     </div>
+                     <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="w-full sm:w-[180px] pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all text-sm appearance-none cursor-pointer"
+                    >
+                        <option value="semua">All Status</option>
+                        <option value="On Going">On Going</option>
+                        <option value="Follow UP">Follow UP</option>
+                        <option value="Fix Schedule">Fix Schedule</option>
+                        <option value="Reject">Reject</option>
+                        <option value="Nomor Sales">Nomor Sales</option>
                     </select>
                     <ChevronLeft className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 rotate-[-90deg] pointer-events-none" />
                 </div>

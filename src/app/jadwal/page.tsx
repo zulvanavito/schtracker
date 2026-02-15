@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { calculateDurationInMs } from "@/lib/utils";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import Link from "next/link";
@@ -48,6 +49,7 @@ import {
   MonitorPlay,
   Map,
 } from "lucide-react";
+import Header from "@/components/Header";
 
 // --- Interfaces ---
 interface LogPesan {
@@ -119,34 +121,6 @@ const hours = Array.from({ length: 24 }, (_, i) =>
 const minutes = ["00", "15", "30", "45"];
 
 const localizer = momentLocalizer(moment);
-
-function calculateDurationInMs(item: Jadwal | EditFormData) {
-  let durationHours = 0;
-  const langganan = item.tipe_langganan
-    ? item.tipe_langganan.toLowerCase()
-    : "";
-  const tipe = item.tipe_outlet ? item.tipe_outlet.toLowerCase() : "";
-  switch (langganan) {
-    case "starter basic":
-      durationHours = 1;
-      break;
-    case "starter":
-      durationHours = 2;
-      break;
-    case "advance":
-    case "prime":
-    case "training berbayar":
-      durationHours = 3;
-      break;
-    default:
-      durationHours = 2;
-  }
-  let durationMs = durationHours * 60 * 60 * 1000;
-  if (tipe === "offline") {
-    durationMs += 30 * 60 * 1000;
-  }
-  return durationMs;
-}
 
 const eventPropGetter = (event: BigCalendarEvent) => {
   const resource = event.resource as Jadwal;
@@ -245,7 +219,7 @@ const CustomToolbar = (toolbar: any) => {
   );
 };
 
-// --- Main Component ---
+
 export default function HalamanJadwal() {
   const [events, setEvents] = useState<BigCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -569,47 +543,41 @@ export default function HalamanJadwal() {
         )}
 
         {/* Header Section */}
-        <header className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-10">
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 ring-4 ring-blue-50">
-                <CalendarIcon className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600 tracking-tight">
-                  Schedule Hub
-                </h1>
-                <p className="text-slate-500 text-lg font-medium">
-                  Manage installation schedules effortlessly
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              asChild
-              variant="outline"
-              className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium"
-            >
-              <Link href="/tabel">
-                <FileText className="h-4 w-4" />
-                Data Table
-              </Link>
-            </Button>
-            <Button
-              asChild
-              className="gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300 font-semibold"
-            >
-              <Link href="/">
-                <Sparkles className="h-4 w-4" />
-                New Schedule
-              </Link>
-            </Button>
-            <div className="pl-3 border-l border-slate-200">
-              <AuthButton />
-            </div>
-          </div>
-        </header>
+        <Header
+          title="Schedule Hub"
+          subtitle="Manage installation schedules effortlessly"
+          icon={<CalendarIcon className="h-8 w-8" />}
+        >
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/tabel">
+              <FileText className="h-4 w-4" />
+              Data Table
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+          >
+            <Link href="/activity">
+              <MonitorPlay className="h-4 w-4" />
+              Activity
+            </Link>
+          </Button>
+          <Button
+            asChild
+            className="gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300 font-semibold"
+          >
+            <Link href="/">
+              <Sparkles className="h-4 w-4" />
+              New Schedule
+            </Link>
+          </Button>
+        </Header>
 
         {/* Bento Grid Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
