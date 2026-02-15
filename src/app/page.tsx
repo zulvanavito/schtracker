@@ -35,14 +35,12 @@ import {
   MapPin,
   FileText,
   Link2,
-  ArrowRight,
   CheckCircle2,
   ListRestart,
   CreditCard,
   Zap,
   MonitorPlay,
 } from "lucide-react";
-import AuthButton from "@/components/AuthButton";
 import { supabase } from "@/lib/supabaseClient";
 import Header from "@/components/Header";
 
@@ -173,7 +171,7 @@ export default function Home() {
           dataTerurai.no_telepon = line.match(/(\(08\)|08)\d{8,12}/)?.[0] || "";
         if (line.startsWith("INV/")) dataTerurai.no_invoice = line.trim();
         if (line.startsWith("SCH/")) dataTerurai.sch_leads = line.trim();
-        if (line.match(/^(Jl\.|Gg\.|Perumahan|Jalan|F7V2\+7G6)/i))
+        if (line.match(/^(Jl\.|Gg\.|Perumahan|JL|JL\.|Jalan|F7V2\+7G6)/i))
           dataTerurai.alamat = line.trim();
         if (lowerLine.includes("offline")) dataTerurai.tipe_outlet = "Offline";
         if (lowerLine.includes("online")) dataTerurai.tipe_outlet = "Online";
