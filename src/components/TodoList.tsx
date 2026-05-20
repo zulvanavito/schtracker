@@ -155,62 +155,63 @@ export default function TodoList({ className, listClassName }: TodoListProps) {
   };
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full ${className}`}>
-      <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
+    <div className={`bg-white rounded-xl shadow-none border border-border overflow-hidden flex flex-col h-full ${className}`}>
+      <div className="p-6 border-b border-hairline flex items-center justify-between bg-secondary/30">
         <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+            <div className="p-2 bg-notion-lavender rounded-lg text-brand-purple">
                 <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
-                <h3 className="font-bold text-slate-800">To-Do List</h3>
-                <p className="text-xs text-slate-500 font-medium">Catatan & Tugas Harian</p>
+                <h3 className="font-semibold text-foreground">Task List</h3>
+                <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider">Quick Actions & Reminders</p>
             </div>
         </div>
-        <div className="text-xs font-bold px-3 py-1 bg-white border border-slate-200 rounded-full text-slate-500">
-            {todos.filter(t => t.completed).length}/{todos.length} Selesai
+        <div className="text-[10px] font-bold px-3 py-1 bg-white border border-border rounded-full text-muted-foreground uppercase tracking-widest">
+            {todos.filter(t => t.completed).length}/{todos.length} Done
         </div>
       </div>
       
-      <div className="p-4 border-b border-slate-100 bg-white">
+      <div className="p-4 border-b border-hairline bg-white">
         <form onSubmit={addTodo} className="flex gap-2">
             <Input 
-                placeholder="Tulis tugas baru..." 
+                placeholder="Type a new task..." 
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                className="border-slate-200 focus:ring-blue-100 focus:border-blue-400 rounded-xl"
+                className="border-input focus:ring-1 focus:ring-primary/20 focus:border-primary rounded-md shadow-none h-11"
             />
             <Button 
                 type="submit" 
                 disabled={adding || !newTodo.trim()}
                 size="icon"
-                className="shrink-0 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200"
+                className="shrink-0 rounded-md bg-primary hover:bg-primary/90 text-white shadow-none h-11 w-11"
             >
                 <Plus className="h-5 w-5" />
             </Button>
         </form>
       </div>
 
-      <div className={`flex-1 overflow-y-auto p-2 space-y-1 ${listClassName || "max-h-[400px]"}`}>
+      <div className={`flex-1 overflow-y-auto p-2 space-y-1 ${listClassName || "max-h-[400px]"} custom-scrollbar`}>
         {loading ? (
-            <div className="text-center py-10 text-slate-400 text-sm">Memuat tugas...</div>
+            <div className="text-center py-10 text-muted-foreground text-xs font-medium uppercase tracking-widest animate-pulse">Synchronizing tasks...</div>
         ) : todos.length === 0 ? (
-            <div className="text-center py-10 flex flex-col items-center gap-3">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+            <div className="text-center py-12 flex flex-col items-center gap-4">
+                <div className="w-16 h-16 bg-secondary/50 rounded-full flex items-center justify-center text-stone opacity-20">
                     <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <p className="text-slate-500 text-sm font-medium">Belum ada tugas</p>
+                <p className="text-muted-foreground text-sm font-normal">No pending tasks found</p>
             </div>
         ) : (
             todos.map((todo) => (
                 <div 
                     key={todo.id} 
-                    className={`group flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 ${
-                        todo.completed ? "bg-slate-50" : "hover:bg-blue-50/50 bg-white"
+                    className={`group flex items-center gap-4 p-3.5 rounded-lg transition-all duration-200 ${
+                        todo.completed ? "bg-secondary/20" : "hover:bg-secondary/40 bg-white"
                     }`}
                 >
                     <Checkbox 
                         checked={todo.completed} 
                         onCheckedChange={() => toggleTodo(todo.id, todo.completed)}
+                        className="rounded-md border-input data-[state=checked]:bg-brand-green data-[state=checked]:border-brand-green"
                     />
                     
                     {editingId === todo.id ? (
@@ -218,7 +219,7 @@ export default function TodoList({ className, listClassName }: TodoListProps) {
                             <Input 
                                 value={editTitle}
                                 onChange={(e) => setEditTitle(e.target.value)}
-                                className="h-8 text-sm"
+                                className="h-9 text-sm rounded-md shadow-none focus:ring-1 focus:ring-primary/20"
                                 autoFocus
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter") saveEdit(todo.id);
@@ -227,13 +228,13 @@ export default function TodoList({ className, listClassName }: TodoListProps) {
                             />
                             <button 
                                 onClick={() => saveEdit(todo.id)}
-                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                className="p-2 text-brand-green hover:bg-notion-mint rounded-md transition-colors shrink-0"
                             >
                                 <Check className="h-4 w-4" />
                             </button>
                             <button 
                                 onClick={cancelEditing}
-                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 text-muted-foreground hover:text-semantic-error hover:bg-notion-rose rounded-md transition-colors shrink-0"
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -241,20 +242,20 @@ export default function TodoList({ className, listClassName }: TodoListProps) {
                     ) : (
                         <>
                             <span className={`flex-1 text-sm font-medium transition-colors ${
-                                todo.completed ? "text-slate-400 line-through decoration-slate-300" : "text-slate-700"
+                                todo.completed ? "text-muted-foreground line-through decoration-muted" : "text-foreground"
                             }`}>
                                 {todo.title}
                             </span>
-                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                     onClick={() => startEditing(todo)}
-                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-notion-sky rounded-md transition-all"
                                 >
                                     <Edit2 className="h-4 w-4" />
                                 </button>
                                 <button 
                                     onClick={() => deleteTodo(todo.id)}
-                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                    className="p-2 text-muted-foreground hover:text-semantic-error hover:bg-notion-rose rounded-md transition-all"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </button>

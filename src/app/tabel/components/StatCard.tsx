@@ -10,14 +10,14 @@ interface StatCardProps {
 
 export default function StatCard({ icon, label, value, color, delay }: StatCardProps) {
   return (
-    <div className={`relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group ${delay}`}>
+    <div className={`relative overflow-hidden bg-white p-5 rounded-xl border border-border shadow-none hover:shadow-notion-2 transition-all duration-300 group ${delay}`}>
       <div className="flex items-center gap-4 relative z-10">
-          <div className={`p-3 rounded-xl ${color} bg-opacity-10 group-hover:scale-110 transition-transform duration-300`}>
+          <div className={`p-2.5 rounded-lg ${color} shadow-none group-hover:scale-105 transition-transform duration-300 shrink-0`}>
               {icon}
           </div>
-          <div>
-              <p className="text-sm text-slate-500 font-medium mb-1">{label}</p>
-              <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{value}</h3>
+          <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-0.5 truncate">{label}</p>
+              <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{value}</h3>
           </div>
       </div>
     </div>

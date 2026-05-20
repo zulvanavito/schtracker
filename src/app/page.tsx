@@ -310,13 +310,13 @@ export default function Home() {
     formData.pukul_instalasi.split(":");
 
   return (
-    <div className="min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-blue-100 p-4 md:p-8 font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-background p-4 md:p-8 font-sans selection:bg-notion-sky selection:text-primary">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <Header
           title={
             <>
-              Smart<span className="text-blue-600">Parser</span>
+              Smart<span className="text-primary">Parser</span>
             </>
           }
           subtitle="Intelligent Schedule Automation"
@@ -325,40 +325,40 @@ export default function Home() {
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary transition-all duration-300"
           >
             <Link href="/tabel">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 mr-2" />
               Data Table
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary transition-all duration-300"
           >
             <Link href="/jadwal">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 mr-2" />
               Calendar
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary transition-all duration-300"
           >
             <Link href="/todo">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 mr-2" />
               To-Do
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50 hover:-translate-y-1 transition-all duration-300"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary transition-all duration-300"
           >
             <Link href="/activity">
-              <MonitorPlay className="h-4 w-4" />
+              <MonitorPlay className="h-4 w-4 mr-2" />
               Activity
             </Link>
           </Button>
@@ -366,9 +366,9 @@ export default function Home() {
 
         {/* Progress Steps */}
         <div className="relative mb-16 hidden md:block">
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 rounded-full -z-10 overflow-hidden">
+            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-border -z-10 overflow-hidden">
                 <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-700 ease-out"
+                    className="h-full bg-primary transition-all duration-700 ease-out"
                     style={{ width: currentStep === 1 ? '50%' : '100%' }}
                 />
             </div>
@@ -391,15 +391,15 @@ export default function Home() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {/* Input Section */}
           <div className="xl:col-span-4 transition-all duration-500 ease-in-out">
-            <Card className="glass bg-white/40 backdrop-blur-xl border-white/40 shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500">
-              <CardHeader className="border-b border-white/30 pb-6 pt-6">
-                <CardTitle className="flex items-center gap-3 text-2xl font-bold text-slate-800">
-                   <div className="p-2.5 bg-blue-100/80 rounded-2xl text-blue-600 shadow-sm">
-                        <ListRestart className="h-6 w-6" />
+            <Card className="bg-white border-border shadow-sm rounded-xl overflow-hidden hover:shadow-notion-2 transition-all duration-500">
+              <CardHeader className="border-b border-border pb-6 pt-6 bg-secondary/30">
+                <CardTitle className="flex items-center gap-3 text-xl font-semibold text-foreground">
+                   <div className="p-2 bg-notion-sky rounded-lg text-primary shadow-sm">
+                        <ListRestart className="h-5 w-5" />
                     </div>
                   Raw Input
                 </CardTitle>
-                <CardDescription className="text-slate-500 text-base font-medium">
+                <CardDescription className="text-muted-foreground text-sm font-normal">
                   Paste WhatsApp chat or Excel rows here.
                 </CardDescription>
               </CardHeader>
@@ -418,29 +418,29 @@ SCH/LEADS/001
 Jl. Example Address No. 123
 Tipe: Online
 Langganan: Starter`}
-                    className="resize-none rounded-2xl border-white/40 bg-white/40 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all duration-300 min-h-[350px] font-mono text-sm leading-relaxed text-slate-700 placeholder:text-slate-400 shadow-inner"
+                    className="resize-none rounded-md border-input bg-background focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-300 min-h-[350px] font-mono text-sm leading-relaxed text-foreground placeholder:text-muted shadow-none"
                   />
 
-                  <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex gap-4 items-start shadow-sm">
-                    <div className="p-2 bg-amber-100 rounded-xl rounded-tl-none">
-                        <Zap className="h-5 w-5 text-amber-600" />
+                  <div className="bg-notion-yellow/30 border border-notion-yellow-bold rounded-lg p-4 flex gap-4 items-start shadow-sm">
+                    <div className="p-2 bg-notion-yellow-bold rounded-md">
+                        <Zap className="h-4 w-4 text-brand-orange-deep" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-amber-900">Parsing Tip</p>
-                      <p className="text-xs text-amber-700/80 leading-relaxed font-medium">
-                        Use one line per data point for best results. Our AI works best with clear line breaks.
+                      <p className="text-xs font-bold text-brand-orange-deep uppercase tracking-wider">Parsing Tip</p>
+                      <p className="text-sm text-slate-700 leading-relaxed font-normal">
+                        Use one line per data point for best results.
                       </p>
                     </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-white/30 border-t border-white/30 px-6 py-6">
+              <CardFooter className="bg-secondary/20 border-t border-border px-6 py-6">
                 <Button
                   onClick={handleParse}
-                  className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 group"
+                  className="w-full h-12 text-base font-semibold rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-300 group"
                   disabled={!rawText.trim()}
                 >
-                  <Sparkles className="mr-2 h-5 w-5 group-hover:animate-ping" />
+                  <Sparkles className="mr-2 h-4 w-4" />
                   Smart Parse
                 </Button>
               </CardFooter>
@@ -450,19 +450,19 @@ Langganan: Starter`}
           {/* Form Section */}
           <div className="xl:col-span-8 transition-all duration-500 ease-in-out">
             <form onSubmit={handleSubmit}>
-              <Card className="glass bg-white/60 backdrop-blur-2xl border-white/60 shadow-2xl shadow-slate-200/50 rounded-3xl h-full overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-slate-50/80 to-blue-50/50 border-b border-white/50 pb-6 pt-6 backdrop-blur-sm">
+              <Card className="bg-white border-border shadow-sm rounded-xl h-full overflow-hidden">
+                <CardHeader className="bg-secondary/30 border-b border-border pb-6 pt-6">
                   <div className="flex items-center justify-between">
-                     <CardTitle className="flex items-center gap-4 text-2xl font-bold text-slate-800">
-                        <div className="p-3 bg-emerald-100 rounded-2xl text-emerald-600 shadow-sm ring-4 ring-emerald-50">
-                            <CheckCircle2 className="h-6 w-6" />
+                     <CardTitle className="flex items-center gap-4 text-xl font-semibold text-foreground">
+                        <div className="p-2.5 bg-notion-mint rounded-lg text-brand-green shadow-sm">
+                            <CheckCircle2 className="h-5 w-5" />
                         </div>
                         <div>
                             Review Information
-                            <span className="block text-sm font-medium text-slate-400 mt-1">Make sure everything is correct</span>
+                            <span className="block text-sm font-normal text-muted-foreground mt-0.5">Make sure everything is correct</span>
                         </div>
                     </CardTitle>
-                    <div className="hidden md:block px-4 py-2 bg-white/50 rounded-xl border border-white/50 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <div className="hidden md:block px-3 py-1 bg-secondary rounded-md border border-border text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                         Step 02
                     </div>
                   </div>
@@ -471,9 +471,9 @@ Langganan: Starter`}
                   {/* Informasi Outlet */}
                   <section className="space-y-6">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="h-8 w-1 bg-blue-500 rounded-r-full" />
-                        <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                        <Building className="h-4 w-4 text-slate-400" /> Outlet Information
+                        <div className="h-5 w-1 bg-primary rounded-full" />
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <Building className="h-3 w-3" /> Outlet Information
                         </h3>
                     </div>
                     
@@ -531,18 +531,18 @@ Langganan: Starter`}
                   {/* Tipe & Langganan */}
                   <section className="space-y-6">
                      <div className="flex items-center gap-3 mb-6">
-                        <div className="h-8 w-1 bg-purple-500 rounded-r-full" />
-                        <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-slate-400" /> Services
+                        <div className="h-5 w-1 bg-brand-purple rounded-full" />
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <CreditCard className="h-3 w-3" /> Services
                         </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                         <Label
                             htmlFor="tipe_outlet"
-                            className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1"
+                            className="flex items-center gap-2 text-sm font-semibold text-foreground mb-1"
                         >
-                            <Link2 className="h-4 w-4 text-blue-500" />
+                            <Link2 className="h-4 w-4 text-primary" />
                             Tipe Outlet
                         </Label>
                         <Select
@@ -553,12 +553,12 @@ Langganan: Starter`}
                             }
                             required
                         >
-                            <SelectTrigger className="h-12 rounded-2xl border-white/60 bg-white/50 hover:bg-white/80 transition-colors shadow-sm focus:ring-4 focus:ring-blue-100/50">
+                            <SelectTrigger className="h-11 rounded-md border-input bg-background hover:bg-secondary transition-colors shadow-none focus:ring-1 focus:ring-primary/20">
                             <SelectValue placeholder="Select type" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-white/80 bg-white/90 backdrop-blur-xl">
-                            <SelectItem value="Online" className="rounded-xl focus:bg-blue-50 cursor-pointer">Online</SelectItem>
-                            <SelectItem value="Offline" className="rounded-xl focus:bg-blue-50 cursor-pointer">Offline</SelectItem>
+                            <SelectContent className="rounded-md border-border bg-background shadow-notion-elevation-4">
+                            <SelectItem value="Online" className="rounded-sm cursor-pointer">Online</SelectItem>
+                            <SelectItem value="Offline" className="rounded-sm cursor-pointer">Offline</SelectItem>
                             </SelectContent>
                         </Select>
                         </div>
@@ -575,12 +575,12 @@ Langganan: Starter`}
                   {/* Jadwal Instalasi */}
                   <section className="space-y-6 pt-2">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="h-8 w-1 bg-emerald-500 rounded-r-full" />
-                        <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-slate-400" /> Installation Schedule
+                        <div className="h-5 w-1 bg-brand-green rounded-full" />
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <Clock className="h-3 w-3" /> Installation Schedule
                         </h3>
                     </div>
-                    <div className="p-6 bg-gradient-to-br from-white/60 to-slate-50/60 rounded-[2rem] border border-white/60 shadow-inner">
+                    <div className="p-6 bg-secondary/10 rounded-xl border border-border">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormInput
                             label="Hari"
@@ -591,8 +591,8 @@ Langganan: Starter`}
                             placeholder="Auto-filled"
                         />
                         <div className="space-y-2">
-                            <Label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1">
-                            <Calendar className="h-4 w-4 text-emerald-500" />
+                            <Label className="flex items-center gap-2 text-sm font-semibold text-foreground mb-1">
+                            <Calendar className="h-4 w-4 text-brand-green" />
                             Tanggal
                             </Label>
                             <DatePicker
@@ -601,8 +601,8 @@ Langganan: Starter`}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1">
-                            <Clock className="h-4 w-4 text-purple-500" />
+                            <Label className="flex items-center gap-2 text-sm font-semibold text-foreground mb-1">
+                            <Clock className="h-4 w-4 text-brand-purple" />
                             Waktu
                             </Label>
                             <div className="flex gap-2">
@@ -613,18 +613,18 @@ Langganan: Starter`}
                                 }
                                 required
                             >
-                                <SelectTrigger className="h-12 rounded-2xl border-white/60 bg-white/80 shadow-sm">
+                                <SelectTrigger className="h-11 rounded-md border-input bg-background shadow-none">
                                 <SelectValue placeholder="HH" />
                                 </SelectTrigger>
-                                <SelectContent className="max-h-60 rounded-xl">
+                                <SelectContent className="max-h-60 rounded-md">
                                 {hours.map((hour) => (
-                                    <SelectItem key={hour} value={hour} className="rounded-lg focus:bg-slate-100">
+                                    <SelectItem key={hour} value={hour} className="rounded-sm">
                                     {hour}
                                     </SelectItem>
                                 ))}
                                 </SelectContent>
                             </Select>
-                            <span className="flex items-center text-slate-400 font-bold">:</span>
+                            <span className="flex items-center text-muted font-bold">:</span>
                             <Select
                                 value={currentMinute}
                                 onValueChange={(value) =>
@@ -632,12 +632,12 @@ Langganan: Starter`}
                                 }
                                 required
                             >
-                                <SelectTrigger className="h-12 rounded-2xl border-white/60 bg-white/80 shadow-sm">
+                                <SelectTrigger className="h-11 rounded-md border-input bg-background shadow-none">
                                 <SelectValue placeholder="MM" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl">
+                                <SelectContent className="rounded-md">
                                 {minutes.map((minute) => (
-                                    <SelectItem key={minute} value={minute} className="rounded-lg focus:bg-slate-100">
+                                    <SelectItem key={minute} value={minute} className="rounded-sm">
                                     {minute}
                                     </SelectItem>
                                 ))}
@@ -666,21 +666,21 @@ Langganan: Starter`}
                     />
                   </div>
                 </CardContent>
-                <CardFooter className="bg-white/40 border-t border-white/40 px-8 py-8 backdrop-blur-md">
+                <CardFooter className="bg-secondary/20 border-t border-border px-8 py-8">
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full h-16 text-lg font-bold rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 group"
+                    className="w-full h-14 text-base font-semibold rounded-md bg-brand-green hover:bg-brand-green/90 text-white shadow-sm transition-all group"
                     disabled={isSubmitting || !formData.tanggal_instalasi}
                   >
                      {isSubmitting ? (
                         <div className="flex items-center gap-3">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                             Saving Schedule...
                         </div>
                      ) : (
                         <div className="flex items-center gap-3">
-                            <Save className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                            <Save className="h-5 w-5" />
                             Confirm & Save Schedule
                         </div>
                      )}
@@ -710,20 +710,20 @@ function StepIndicator({
   isCompleted,
 }: StepIndicatorProps) {
   return (
-    <div className={`flex flex-col items-center gap-3 relative z-10 transition-all duration-500 ${isActive || isCompleted ? 'scale-110' : 'scale-100 opacity-70'}`}>
+    <div className={`flex flex-col items-center gap-3 relative z-10 transition-all duration-500 ${isActive || isCompleted ? 'scale-105' : 'scale-100 opacity-60'}`}>
       <div
-        className={`flex items-center justify-center w-12 h-12 rounded-full border-4 font-black text-lg transition-all duration-500 shadow-xl ${
+        className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-bold text-base transition-all duration-500 ${
           isCompleted
-            ? "bg-emerald-500 border-emerald-100 text-white shadow-emerald-500/30"
+            ? "bg-brand-green border-brand-green text-white shadow-sm"
             : isActive
-            ? "bg-blue-600 border-blue-100 text-white shadow-blue-500/30"
-            : "bg-white border-slate-200 text-slate-300"
+            ? "bg-primary border-primary text-white shadow-sm"
+            : "bg-white border-border text-muted-foreground"
         }`}
       >
-        {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : number}
+        {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : number}
       </div>
-      <div className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm transition-all duration-500 ${
-          isActive || isCompleted ? "bg-white/80 text-slate-800 shadow-sm" : "bg-transparent text-slate-400"
+      <div className={`px-4 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all duration-500 ${
+          isActive || isCompleted ? "bg-secondary text-foreground shadow-none" : "bg-transparent text-muted-foreground"
       }`}>
         {label}
       </div>
@@ -759,7 +759,7 @@ function FormInput({
     <div className="space-y-2 group">
       <Label
         htmlFor={name}
-        className="flex items-center gap-2 text-sm font-bold text-slate-700 ml-1 transition-colors group-hover:text-blue-600"
+        className="flex items-center gap-2 text-sm font-semibold text-foreground ml-1 transition-colors group-hover:text-primary"
       >
         {icon}
         {label}
@@ -773,7 +773,7 @@ function FormInput({
         required={required}
         disabled={disabled}
         placeholder={placeholder}
-        className="h-12 rounded-2xl border-white/60 bg-white/50 hover:bg-white/80 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 transition-all duration-300 shadow-sm placeholder:text-slate-300 text-slate-800 font-medium"
+        className="h-11 rounded-md border-input bg-background hover:bg-secondary focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-300 shadow-none placeholder:text-muted text-foreground font-normal"
       />
     </div>
   );

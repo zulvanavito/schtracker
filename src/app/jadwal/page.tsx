@@ -520,13 +520,13 @@ export default function HalamanJadwal() {
   };
 
   return (
-    <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-blue-50 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-background p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
         {error && (
-          <div className="mb-6 p-4 glass-card border-l-4 border-l-red-500 flex items-center justify-between">
-            <div className="flex items-center gap-3 text-red-700">
+          <div className="mb-6 p-4 bg-white border border-border border-l-4 border-l-destructive flex items-center justify-between rounded-md">
+            <div className="flex items-center gap-3 text-destructive">
               <X className="h-5 w-5" />
-              <span className="font-medium">Error: {error}</span>
+              <span className="font-medium text-sm">Error: {error}</span>
             </div>
             <Button
               variant="outline"
@@ -535,7 +535,7 @@ export default function HalamanJadwal() {
                 setError(null);
                 fetchJadwal();
               }}
-              className="text-red-700 hover:bg-red-50 border-red-200"
+              className="text-destructive hover:bg-destructive/10 border-destructive/20 h-8 text-xs"
             >
               Coba Lagi
             </Button>
@@ -551,36 +551,36 @@ export default function HalamanJadwal() {
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary"
           >
             <Link href="/tabel">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 mr-2" />
               Data Table
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary"
           >
             <Link href="/activity">
-              <MonitorPlay className="h-4 w-4" />
+              <MonitorPlay className="h-4 w-4 mr-2" />
               Activity
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary"
           >
             <Link href="/todo">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 mr-2" />
               To-Do
             </Link>
           </Button>
           <Button
             asChild
-            className="gap-2 h-11 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition-all duration-300 font-semibold"
+            className="gap-2 h-11 px-5 rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm transition-all duration-300 font-semibold"
           >
             <Link href="/">
               <Sparkles className="h-4 w-4" />
@@ -592,81 +592,67 @@ export default function HalamanJadwal() {
         {/* Bento Grid Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           <StatCard
-            icon={<CalendarIcon className="h-6 w-6 text-indigo-600" />}
+            icon={<CalendarIcon className="h-5 w-5 text-primary" />}
             label="Total Schedules"
             value={events.length}
-            color="bg-indigo-50"
-            ring="ring-indigo-100"
+            color="bg-notion-sky"
           />
           <StatCard
-            icon={<MonitorPlay className="h-6 w-6 text-emerald-600" />}
+            icon={<MonitorPlay className="h-5 w-5 text-brand-green" />}
             label="Online Sessions"
             value={
               events.filter(
                 (e) => (e.resource as Jadwal)?.tipe_outlet === "Online"
               ).length
             }
-            color="bg-emerald-50"
-            ring="ring-emerald-100"
+            color="bg-notion-mint"
           />
           <StatCard
-            icon={<Map className="h-6 w-6 text-amber-600" />}
+            icon={<Map className="h-5 w-5 text-brand-orange" />}
             label="Offline Visits"
             value={
               events.filter(
                 (e) => (e.resource as Jadwal)?.tipe_outlet === "Offline"
               ).length
             }
-            color="bg-amber-50"
-            ring="ring-amber-100"
+            color="bg-notion-peach"
           />
         </div>
 
         {/* Legend */}
-        <div className="mb-6 flex flex-wrap items-center gap-6 px-4 py-3 bg-white/40 backdrop-blur-sm rounded-xl border border-white/40 shadow-sm">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2">Legend:</span>
+        <div className="mb-6 flex flex-wrap items-center gap-6 px-5 py-4 bg-secondary/30 rounded-xl border border-border shadow-none">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-2">Legend:</span>
             <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-cyan-500"></div>
-                <span className="text-xs font-semibold text-slate-600">Starter</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-notion-sky border border-link-blue"></div>
+                <span className="text-xs font-semibold text-foreground">Starter</span>
             </div>
             <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-                <span className="text-xs font-semibold text-slate-600">Starter Basic</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-notion-gray border border-stone"></div>
+                <span className="text-xs font-semibold text-foreground">Starter Basic</span>
             </div>
              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                <span className="text-xs font-semibold text-slate-600">Advance</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-notion-lavender border border-brand-purple"></div>
+                <span className="text-xs font-semibold text-foreground">Advance</span>
             </div>
              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                <span className="text-xs font-semibold text-slate-600">Prime</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-notion-yellow border border-brand-orange"></div>
+                <span className="text-xs font-semibold text-foreground">Prime</span>
             </div>
              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                <span className="text-xs font-semibold text-slate-600">Training</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-notion-mint border border-brand-green"></div>
+                <span className="text-xs font-semibold text-foreground">Training</span>
             </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex flex-wrap gap-3 mb-6 items-center bg-white/40 backdrop-blur-sm p-3 rounded-2xl w-fit border border-white/40">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2">Legend:</span>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100/50 text-emerald-700 text-xs font-semibold border border-emerald-200/50">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Online
-            </span>
-            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100/50 text-amber-700 text-xs font-semibold border border-amber-200/50">
-                <div className="w-2 h-2 rounded-full bg-amber-500"></div> Offline
-            </span>
         </div>
 
         {/* Calendar Container */}
-        <div className="glass-card p-6 md:p-8 min-h-[800px] mb-12">
+        <div className="bg-white border border-border rounded-xl p-6 md:p-8 min-h-[800px] mb-12 shadow-sm">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-[600px] space-y-6">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full border-4 border-blue-100 animate-pulse"></div>
-                <div className="w-16 h-16 rounded-full border-4 border-blue-600 border-t-transparent animate-spin absolute top-0 left-0"></div>
+                <div className="w-12 h-12 rounded-full border-2 border-secondary animate-pulse"></div>
+                <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin absolute top-0 left-0"></div>
               </div>
-              <p className="text-slate-500 font-medium animate-pulse">
+              <p className="text-muted-foreground text-sm font-normal animate-pulse">
                 Synchronizing calendar data...
               </p>
             </div>
@@ -695,7 +681,7 @@ export default function HalamanJadwal() {
 
       {/* Modal Detail & Edit */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-2xl w-[95vw] rounded-3xl border-0 shadow-2xl p-0 overflow-hidden bg-white/95 backdrop-blur-xl ring-1 ring-black/5">
+        <DialogContent className="sm:max-w-2xl w-[95vw] rounded-xl border-0 shadow-notion-elevation-4 p-0 overflow-hidden bg-white ring-1 ring-black/5">
           {selectedEvent && (
             <>
               {isEditing ? (
@@ -704,19 +690,19 @@ export default function HalamanJadwal() {
                   onSubmit={handleUpdateSubmit}
                   className="flex flex-col max-h-[90vh]"
                 >
-                  <DialogHeader className="p-6 pb-4 border-b border-slate-100">
-                    <DialogTitle className="flex items-center gap-3 text-2xl font-bold text-slate-800">
-                      <div className="p-2 bg-blue-100 rounded-xl">
-                        <Edit className="h-5 w-5 text-blue-600" />
+                  <DialogHeader className="p-6 pb-4 border-b border-border bg-secondary/20">
+                    <DialogTitle className="flex items-center gap-3 text-lg font-semibold text-foreground">
+                      <div className="p-2 bg-notion-sky rounded-md">
+                        <Edit className="h-5 w-5 text-primary" />
                       </div>
                       Edit Schedule
                     </DialogTitle>
                   </DialogHeader>
 
                   <div className="p-6 space-y-6 overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-5">
-                            <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Details</h4>
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-1">Details</h4>
                             <FormInput
                                 label="Nama Outlet"
                                 name="nama_outlet"
@@ -740,17 +726,17 @@ export default function HalamanJadwal() {
                             />
                         </div>
                         <div className="space-y-5">
-                             <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Classification</h4>
+                             <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-1">Classification</h4>
                             <div className="space-y-2">
-                                <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                                    <Link2 className="h-4 w-4 text-blue-500" /> Tipe Outlet
+                                <Label className="text-[11px] font-bold text-foreground">
+                                    Tipe Outlet
                                 </Label>
                                 <Select
                                     name="tipe_outlet"
                                     value={editFormData?.tipe_outlet}
                                     onValueChange={(v) => handleEditSelectChange("tipe_outlet", v)}
                                 >
-                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectTrigger className="rounded-md border-input bg-background h-10 shadow-none">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -774,9 +760,9 @@ export default function HalamanJadwal() {
                         </div>
                     </div>
                     
-                    <div className="pt-6 border-t border-slate-100">
-                        <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Timing</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="pt-6">
+                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-1 mb-4">Timing</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FormInput
                                 label="Hari Instalasi"
                                 name="hari_instalasi"
@@ -785,8 +771,8 @@ export default function HalamanJadwal() {
                                 required
                             />
                             <div className="space-y-2">
-                                <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                                    <CalendarIcon className="h-4 w-4 text-emerald-500" /> Tanggal
+                                <Label className="text-[11px] font-bold text-foreground">
+                                    Tanggal
                                 </Label>
                                 <DatePicker
                                     date={editFormData?.tanggal_instalasi}
@@ -794,9 +780,7 @@ export default function HalamanJadwal() {
                                 />
                             </div>
                              <div className="space-y-2">
-                                <Label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                                <Clock className="h-4 w-4 text-purple-500" /> Waktu
-                                </Label>
+                                <Label className="text-[11px] font-bold text-foreground">Waktu</Label>
                                 <div className="flex gap-2">
                                 <Select
                                     value={editHour}
@@ -805,13 +789,13 @@ export default function HalamanJadwal() {
                                     }
                                     required
                                 >
-                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectTrigger className="rounded-md border-input bg-background h-10 shadow-none">
                                     <SelectValue placeholder="Jam" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-60">
                                     {hours.map((hour) => (
                                         <SelectItem key={hour} value={hour}>
-                                        {hour}.00
+                                        {hour}:00
                                         </SelectItem>
                                     ))}
                                     </SelectContent>
@@ -823,13 +807,13 @@ export default function HalamanJadwal() {
                                     }
                                     required
                                 >
-                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50">
+                                    <SelectTrigger className="rounded-md border-input bg-background h-10 shadow-none">
                                     <SelectValue placeholder="Menit" />
                                     </SelectTrigger>
                                     <SelectContent>
                                     {minutes.map((minute) => (
                                         <SelectItem key={minute} value={minute}>
-                                        .{minute}
+                                        :{minute}
                                         </SelectItem>
                                     ))}
                                     </SelectContent>
@@ -848,18 +832,18 @@ export default function HalamanJadwal() {
                     />
                   </div>
 
-                  <DialogFooter className="p-6 bg-slate-50/50 border-t border-slate-100 gap-3">
+                  <DialogFooter className="p-6 bg-secondary/30 border-t border-border gap-3">
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => setIsEditing(false)}
-                      className="rounded-xl hover:bg-slate-200/50 text-slate-600"
+                      className="rounded-md hover:bg-secondary text-muted-foreground"
                     >
                       Batal
                     </Button>
                     <Button
                       type="submit"
-                      className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 px-6"
+                      className="rounded-md bg-primary hover:bg-primary/90 text-white shadow-sm px-6 font-semibold"
                     >
                       Simpan Perubahan
                     </Button>
@@ -869,71 +853,71 @@ export default function HalamanJadwal() {
                 // MODE VIEW
                 <>
                   <DialogHeader className="p-0">
-                    <div className={`h-24 w-full bg-gradient-to-r ${selectedEvent.tipe_outlet === "Online" ? "from-emerald-500 to-teal-500" : "from-amber-500 to-orange-500"} relative`}>
-                        <div className="absolute -bottom-10 left-6 p-4 bg-white rounded-2xl shadow-xl ring-4 ring-white">
+                    <div className={`h-24 w-full ${selectedEvent.tipe_outlet === "Online" ? "bg-notion-mint" : "bg-notion-peach"} relative`}>
+                        <div className="absolute -bottom-8 left-6 p-3.5 bg-white rounded-xl shadow-notion-2 ring-4 ring-white border border-border">
                              {selectedEvent.tipe_outlet === "Online" ? (
-                                <MonitorPlay className="h-8 w-8 text-emerald-600" />
+                                <MonitorPlay className="h-7 w-7 text-brand-green" />
                              ) : (
-                                <Building className="h-8 w-8 text-amber-600" />
+                                <Building className="h-7 w-7 text-brand-orange" />
                              )}
                         </div>
                     </div>
-                    <div className="mt-12 px-6">
-                        <DialogTitle className="text-2xl font-bold text-slate-800">
+                    <div className="mt-10 px-6">
+                        <DialogTitle className="text-xl font-semibold text-foreground">
                           {selectedEvent.nama_outlet}
                         </DialogTitle>
-                        <p className="text-slate-500 font-medium">{selectedEvent.sch_leads}</p>
+                        <p className="text-muted-foreground text-sm font-normal">{selectedEvent.sch_leads}</p>
                     </div>
                   </DialogHeader>
 
                   <div className="px-6 py-6 space-y-8 overflow-y-auto max-h-[60vh]">
                     {/* Status Chips */}
                     <div className="flex gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${selectedEvent.tipe_outlet === "Online" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${selectedEvent.tipe_outlet === "Online" ? "bg-notion-mint text-brand-green" : "bg-notion-peach text-brand-orange-deep"}`}>
                             {selectedEvent.tipe_outlet}
                         </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-100 text-purple-700">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-notion-lavender text-brand-purple-800">
                             {selectedEvent.tipe_langganan}
                         </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-12 gap-y-6">
                          <InfoItem
-                          icon={<User className="h-4 w-4 text-slate-400" />}
+                          icon={<User className="h-3.5 w-3.5 text-muted-foreground" />}
                           label="Owner"
                           value={selectedEvent.nama_owner}
                         />
                          <InfoItem
-                          icon={<Phone className="h-4 w-4 text-slate-400" />}
+                          icon={<Phone className="h-3.5 w-3.5 text-muted-foreground" />}
                           label="Contact"
                           value={selectedEvent.no_telepon}
                         />
                          <InfoItem
-                          icon={<CalendarIcon className="h-4 w-4 text-slate-400" />}
+                          icon={<CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />}
                           label="Date"
                           value={formatTanggalDisplay(selectedEvent.tanggal_instalasi)}
                         />
                          <InfoItem
-                          icon={<Clock className="h-4 w-4 text-slate-400" />}
+                          icon={<Clock className="h-3.5 w-3.5 text-muted-foreground" />}
                           label="Time"
                           value={`${selectedEvent.pukul_instalasi} WIB`}
                         />
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                    <div className="p-4 rounded-xl bg-secondary/20 border border-border space-y-3">
                         <div className="flex items-start gap-3">
-                            <MapPin className="h-5 w-5 text-slate-400 mt-0.5" />
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                             <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Address</p>
-                                <p className="text-slate-700 leading-relaxed font-medium">{selectedEvent.alamat}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Address</p>
+                                <p className="text-foreground leading-relaxed font-normal text-sm">{selectedEvent.alamat}</p>
                             </div>
                         </div>
                          {selectedEvent.link_meet && (
-                            <div className="flex items-start gap-3 pt-3 border-t border-slate-200">
-                                <Link2 className="h-5 w-5 text-blue-500 mt-0.5" />
+                            <div className="flex items-start gap-3 pt-3 border-t border-border">
+                                <Link2 className="h-4 w-4 text-primary mt-0.5" />
                                 <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Meet Link</p>
-                                    <a href={selectedEvent.link_meet} target="_blank" className="text-blue-600 hover:underline font-medium break-all">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Meet Link</p>
+                                    <a href={selectedEvent.link_meet} target="_blank" className="text-primary hover:underline font-normal text-sm break-all">
                                         {selectedEvent.link_meet}
                                     </a>
                                 </div>
@@ -943,45 +927,45 @@ export default function HalamanJadwal() {
 
                     {/* Log Pesan */}
                     <div className="space-y-3">
-                        <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                            <MessageSquare className="h-4 w-4 text-blue-500" /> Message History
+                        <h4 className="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-widest">
+                            <MessageSquare className="h-3.5 w-3.5 text-primary" /> Message History
                         </h4>
                         {selectedEvent.log_pesan && selectedEvent.log_pesan.length > 0 ? (
                              <div className="space-y-2">
                                 {selectedEvent.log_pesan.map((log) => (
-                                    <div key={log.id} className="flex justify-between items-center p-3 rounded-lg bg-blue-50/50 border border-blue-100">
-                                        <span className="text-sm font-medium text-blue-900">{log.tipe_pesan}</span>
-                                        <span className="text-xs text-blue-400">{new Date(log.created_at).toLocaleDateString()}</span>
+                                    <div key={log.id} className="flex justify-between items-center p-3 rounded-md bg-white border border-border shadow-none">
+                                        <span className="text-xs font-semibold text-foreground">{log.tipe_pesan}</span>
+                                        <span className="text-[10px] text-muted-foreground font-medium">{new Date(log.created_at).toLocaleDateString()}</span>
                                     </div>
                                 ))}
                              </div>
                         ) : (
-                            <p className="text-sm text-slate-400 italic">No messages sent yet.</p>
+                            <p className="text-xs text-muted-foreground italic pl-1">No messages sent yet.</p>
                         )}
                     </div>
                   </div>
 
-                  <DialogFooter className="p-6 pt-2 gap-3 justify-between items-center border-t border-slate-100">
+                  <DialogFooter className="p-6 pt-3 gap-3 justify-between items-center border-t border-border bg-secondary/10">
                      <Button
                       variant="ghost"
                       onClick={handleDelete}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-md h-9 text-xs"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                      <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                     </Button>
                     <div className="flex gap-3">
                         <Button
                         variant="outline"
                         onClick={closeModal}
-                        className="rounded-xl border-slate-200 text-slate-600"
+                        className="rounded-md border-input text-foreground h-9 text-xs"
                         >
                         Close
                         </Button>
                         <Button
                         onClick={() => setIsEditing(true)}
-                        className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20"
+                        className="rounded-md bg-foreground text-background hover:bg-foreground/90 shadow-sm h-9 text-xs font-semibold"
                         >
-                        <Edit className="h-4 w-4 mr-2" /> Edit Info
+                        <Edit className="h-3.5 w-3.5 mr-2" /> Edit Info
                         </Button>
                     </div>
                   </DialogFooter>
@@ -997,25 +981,25 @@ export default function HalamanJadwal() {
 
 // --- Components Helpers ---
 
-function StatCard({ icon, label, value, color, ring }: any) {
+function StatCard({ icon, label, value, color }: any) {
   return (
-    <div className="glass-card p-5 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
-      <div className={`p-3 rounded-2xl ${color} ${ring} ring-1`}>{icon}</div>
+    <div className="bg-white border border-border p-5 rounded-xl flex items-center gap-4 transition-all hover:shadow-notion-2 duration-300">
+      <div className={`p-2.5 rounded-lg ${color} shadow-none`}>{icon}</div>
       <div>
-        <p className="text-sm text-slate-500 font-medium">{label}</p>
-        <p className="text-3xl font-extrabold text-slate-800">{value}</p>
+        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
       </div>
     </div>
   );
 }
 
-function InfoItem({ icon, label, value, isLink }: any) {
+function InfoItem({ icon, label, value }: any) {
   return (
     <div>
-      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-2">
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-2">
         {icon} {label}
       </p>
-      <p className="text-base font-semibold text-slate-800 truncate">{value || "-"}</p>
+      <p className="text-sm font-semibold text-foreground truncate">{value || "-"}</p>
     </div>
   );
 }
@@ -1034,7 +1018,7 @@ function FormInput({
     <div className="space-y-1.5">
       <Label
         htmlFor={name}
-        className="flex items-center gap-2 text-sm font-medium text-slate-700"
+        className="flex items-center gap-2 text-[11px] font-bold text-foreground"
       >
         {icon}
         {label}
@@ -1047,7 +1031,7 @@ function FormInput({
         type={type}
         required={required}
         disabled={disabled}
-        className="rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300"
+        className="rounded-md border-input bg-background focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-300 shadow-none h-10 text-sm font-normal"
       />
     </div>
   );

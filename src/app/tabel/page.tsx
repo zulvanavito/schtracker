@@ -764,7 +764,7 @@ export default function HalamanTabel() {
   }
 
   return (
-    <div className="min-h-screen bg-[conic-gradient(at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-blue-50 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-background p-4 md:p-8 font-sans selection:bg-notion-sky selection:text-primary">
       <div className="max-w-[1400px] mx-auto">
         {/* Header */}
         <Header
@@ -775,36 +775,36 @@ export default function HalamanTabel() {
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary"
           >
             <Link href="/jadwal">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 mr-2" />
               Calendar
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary"
           >
             <Link href="/activity">
-              <MonitorPlay className="h-4 w-4" />
+              <MonitorPlay className="h-4 w-4 mr-2" />
               Activity
             </Link>
           </Button>
           <Button
             asChild
             variant="outline"
-            className="glass-button gap-2 rounded-xl h-11 px-5 border-slate-200 text-slate-600 font-medium hover:text-blue-600 hover:bg-blue-50"
+            className="rounded-md h-11 px-5 border-input text-foreground font-medium hover:text-primary hover:bg-secondary"
           >
             <Link href="/todo">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 mr-2" />
               To-Do
             </Link>
           </Button>
           <Button
             asChild
-            className="gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm shadow-blue-200 transition-all"
+            className="gap-2 h-11 px-5 rounded-md bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm transition-all"
           >
             <Link href="/">
               <Sparkles className="h-4 w-4" />
@@ -816,39 +816,39 @@ export default function HalamanTabel() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
            <StatCard
-            icon={<FileText className="h-5 w-5 text-indigo-600" />}
+            icon={<FileText className="h-5 w-5 text-primary" />}
             label="Total Records"
             value={Array.isArray(jadwalList) ? jadwalList.length : 0}
-            color="bg-indigo-50 text-indigo-600"
+            color="bg-notion-sky"
             delay="delay-0"
            />
            <StatCard
-            icon={<MonitorPlay className="h-5 w-5 text-emerald-600" />}
+            icon={<MonitorPlay className="h-5 w-5 text-brand-green" />}
             label="Online"
             value={Array.isArray(jadwalList) ? jadwalList.filter((j) => j.tipe_outlet === "Online").length : 0}
-            color="bg-emerald-50 text-emerald-600"
+            color="bg-notion-mint"
             delay="delay-75"
            />
            <StatCard
-            icon={<Map className="h-5 w-5 text-amber-600" />}
+            icon={<Map className="h-5 w-5 text-brand-orange" />}
             label="Offline"
             value={Array.isArray(jadwalList) ? jadwalList.filter((j) => j.tipe_outlet === "Offline").length : 0}
-            color="bg-amber-50 text-amber-600"
+            color="bg-notion-peach"
             delay="delay-100"
            />
             {/* Custom Filter Card */}
-           <div className="glass-card p-5 flex flex-col justify-center gap-2 transition-all duration-500 hover:-translate-y-1 hover:shadow-lg delay-150 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Filter className="w-16 h-16 text-purple-600" />
+           <div className="bg-white border border-border p-5 flex flex-col justify-center gap-2 transition-all duration-300 hover:shadow-notion-2 delay-150 relative overflow-hidden group rounded-xl">
+                <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Filter className="w-16 h-16 text-primary" />
                 </div>
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 mb-1">
-                    <Filter className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    <Filter className="h-3 w-3" />
                     <span>Quick Filter</span>
                 </div>
                 <select
                   value={filterTipe}
                   onChange={(e) => setFilterTipe(e.target.value)}
-                  className="bg-transparent border-0 p-0 text-xl font-bold text-slate-800 focus:outline-none focus:ring-0 cursor-pointer w-full"
+                  className="bg-transparent border-0 p-0 text-xl font-bold text-foreground focus:outline-none focus:ring-0 cursor-pointer w-full appearance-none"
                 >
                     <option value="semua">All Types</option>
                     <option value="Online">Online Only</option>
@@ -858,49 +858,49 @@ export default function HalamanTabel() {
         </div>
 
         {/* Toolbar */}
-        <div className="mb-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row gap-4 justify-between items-center">
+        <div className="mb-6 bg-white p-4 rounded-xl border border-border shadow-none flex flex-col lg:flex-row gap-4 justify-between items-center">
              {/* Left: Search & Filter */}
              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
                 <div className="relative w-full sm:max-w-xs">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder="Search schedules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all text-sm"
+                    className="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-sm h-10"
                     />
                 </div>
                 
                 <div className="relative w-full sm:w-auto">
-                     <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                     <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                      <select
                       value={filterTipe}
                       onChange={(e) => setFilterTipe(e.target.value)}
-                      className="w-full sm:w-[180px] pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all text-sm appearance-none cursor-pointer"
+                      className="w-full sm:w-[160px] pl-9 pr-8 py-2 rounded-md border border-input bg-background hover:bg-secondary focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-sm appearance-none cursor-pointer h-10 font-medium"
                     >
                         <option value="semua">All Types</option>
-                        <option value="Online">Online Only</option>
-                        <option value="Offline">Offline Only</option>
+                        <option value="Online">Online</option>
+                        <option value="Offline">Offline</option>
                     </select>
-                    <ChevronLeft className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 rotate-[-90deg] pointer-events-none" />
+                    <ChevronLeft className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground rotate-[-90deg] pointer-events-none" />
                 </div>
 
                 <div className="relative w-full sm:w-auto">
                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 flex items-center justify-center">
                         <div className={`w-2 h-2 rounded-full ${
-                             filterStatus === "On Going" ? "bg-blue-500" :
-                             filterStatus === "Follow UP" ? "bg-purple-500" :
-                             filterStatus === "Fix Schedule" ? "bg-emerald-500" :
-                             filterStatus === "Reject" ? "bg-red-500" :
-                             filterStatus === "Nomor Sales" ? "bg-orange-500" :
-                             "bg-slate-400"
+                             filterStatus === "On Going" ? "bg-link-blue" :
+                             filterStatus === "Follow UP" ? "bg-brand-purple" :
+                             filterStatus === "Fix Schedule" ? "bg-brand-green" :
+                             filterStatus === "Reject" ? "bg-semantic-error" :
+                             filterStatus === "Nomor Sales" ? "bg-brand-orange" :
+                             "bg-stone"
                         }`} />
                      </div>
                      <select
                       value={filterStatus}
                       onChange={(e) => setFilterStatus(e.target.value)}
-                      className="w-full sm:w-[180px] pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all text-sm appearance-none cursor-pointer"
+                      className="w-full sm:w-[160px] pl-9 pr-8 py-2 rounded-md border border-input bg-background hover:bg-secondary focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all text-sm appearance-none cursor-pointer h-10 font-medium"
                     >
                         <option value="semua">All Status</option>
                         <option value="On Going">On Going</option>
@@ -909,18 +909,18 @@ export default function HalamanTabel() {
                         <option value="Reject">Reject</option>
                         <option value="Nomor Sales">Nomor Sales</option>
                     </select>
-                    <ChevronLeft className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 rotate-[-90deg] pointer-events-none" />
+                    <ChevronLeft className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground rotate-[-90deg] pointer-events-none" />
                 </div>
              </div>
 
              {/* Right: Sort & Refresh */}
              <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
                  <div className="group relative">
-                    <ArrowUpDown className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    <ArrowUpDown className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value as any)}
-                         className="pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white hover:border-blue-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-50 cursor-pointer text-sm font-medium text-slate-600 transition-all appearance-none"
+                         className="pl-9 pr-8 py-2 rounded-md border border-input bg-background hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary/20 cursor-pointer text-sm font-medium text-foreground transition-all appearance-none h-10"
                     >
                         <option value="terbaru">Newest First</option>
                         <option value="tanggal">Sort by Date</option>
@@ -931,7 +931,7 @@ export default function HalamanTabel() {
                   onClick={fetchJadwal}
                   variant="outline"
                   size="icon"
-                  className="h-[42px] w-[42px] rounded-xl border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200"
+                  className="h-10 w-10 rounded-md border-input text-muted-foreground hover:text-primary hover:bg-secondary"
                 >
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -939,49 +939,49 @@ export default function HalamanTabel() {
         </div>
 
         {/* Data Table (Desktop) */}
-        <div className="hidden md:block bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="hidden md:block bg-white border border-border rounded-xl overflow-hidden shadow-none">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50 border-b border-slate-200">
+              <TableHeader className="bg-secondary/30 border-b border-border">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[180px] py-4 pl-6 font-semibold text-slate-600 text-xs uppercase tracking-wider">Actions</TableHead>
-                  <TableHead className="py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Date & Time</TableHead>
-                  <TableHead className="py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Outlet Details</TableHead>
-                  <TableHead className="py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Classification</TableHead>
-                  <TableHead className="py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Status</TableHead>
-                   <TableHead className="py-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Owner Contact</TableHead>
+                  <TableHead className="w-[180px] py-4 pl-6 font-bold text-muted-foreground text-[10px] uppercase tracking-widest">Actions</TableHead>
+                  <TableHead className="py-4 font-bold text-muted-foreground text-[10px] uppercase tracking-widest">Date & Time</TableHead>
+                  <TableHead className="py-4 font-bold text-muted-foreground text-[10px] uppercase tracking-widest">Outlet Details</TableHead>
+                  <TableHead className="py-4 font-bold text-muted-foreground text-[10px] uppercase tracking-widest">Classification</TableHead>
+                  <TableHead className="py-4 font-bold text-muted-foreground text-[10px] uppercase tracking-widest">Status</TableHead>
+                   <TableHead className="py-4 font-bold text-muted-foreground text-[10px] uppercase tracking-widest">Owner Contact</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentItems.length > 0 ? (
                   currentItems.map((jadwal) => (
-                    <TableRow key={jadwal.id} className="border-b border-slate-50 group hover:bg-blue-50/30 transition-colors">
+                    <TableRow key={jadwal.id} className="border-b border-hairline-soft group hover:bg-secondary/20 transition-colors">
                       <TableCell className="pl-6 py-4">
                         <Button
                             onClick={() => openModal(jadwal)}
                             size="sm"
-                            className="rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 transition-all font-medium text-xs px-4 shadow-sm"
+                            className="rounded-md bg-secondary text-foreground hover:bg-primary hover:text-white transition-all font-semibold text-[11px] px-4 shadow-none border border-border"
                         >
                             <MessageSquare className="h-3.5 w-3.5 mr-2" />
-                            Send MSG
+                            MESSAGE
                         </Button>
                       </TableCell>
-                      <TableCell className="py-4 border-b border-slate-50">
+                      <TableCell className="py-4">
                         <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-semibold text-slate-700">
+                            <span className="text-sm font-semibold text-foreground">
                                 {formatTanggal(jadwal.tanggal_instalasi)}
                             </span>
-                            <span className="text-xs text-slate-500 font-medium">
+                            <span className="text-[11px] text-muted-foreground font-medium">
                                 {formatWaktuWITA(jadwal.pukul_instalasi)}
                             </span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 border-b border-slate-50">
+                      <TableCell className="py-4">
                          <div className="flex flex-col gap-1.5">
                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-slate-800">{jadwal.nama_outlet}</span>
+                                <span className="text-sm font-bold text-foreground">{jadwal.nama_outlet}</span>
                                 {jadwal.no_invoice && (
-                                     <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                     <span className="text-[10px] uppercase font-bold text-muted-foreground bg-notion-gray px-1.5 py-0.5 rounded border border-border">
                                         {jadwal.no_invoice}
                                     </span>
                                 )}
@@ -990,7 +990,7 @@ export default function HalamanTabel() {
                                  <a 
                                     href={formatSchLeadsToUrl(jadwal.sch_leads) || "#"}
                                     target="_blank"
-                                    className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                                    className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-link-blue bg-notion-sky px-1.5 py-0.5 rounded hover:bg-notion-sky/70 transition-colors border border-notion-sky"
                                  >
                                     <Link2 className="h-3 w-3" />
                                     {jadwal.sch_leads?.replace("SCH/LEADS/", "")}
@@ -998,70 +998,70 @@ export default function HalamanTabel() {
                               </div>
                          </div>
                       </TableCell>
-                      <TableCell className="py-4 border-b border-slate-50">
+                      <TableCell className="py-4">
                         <div className="flex flex-col items-start gap-1.5">
-                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                             <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border ${
                                 jadwal.tipe_outlet === "Online" 
-                                ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                                : "bg-amber-50 text-amber-600 border-amber-100"
+                                ? "bg-notion-mint text-brand-green border-notion-mint" 
+                                : "bg-notion-peach text-brand-orange-deep border-notion-peach"
                              }`}>
                                 {jadwal.tipe_outlet}
                             </span>
-                             <span className="text-xs font-semibold text-slate-600 pl-1">
+                             <span className="text-[11px] font-semibold text-muted-foreground pl-1 uppercase tracking-tight">
                                 {jadwal.tipe_langganan}
                             </span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-4 border-b border-slate-50">
+                      <TableCell className="py-4">
                          <div className="relative">
                             <Select
                                 value={jadwal.status || "On Going"}
                                 onValueChange={(val) => handleQuickStatusUpdate(jadwal.id, val)}
                             >
-                                <SelectTrigger className={`w-[140px] h-8 text-[11px] font-bold uppercase tracking-wider border-0 ring-1 ring-inset transition-all rounded-full pl-3 pr-2 gap-2 shadow-sm ${
-                                    jadwal.status === "On Going" ? "bg-blue-50 text-blue-700 ring-blue-200 hover:bg-blue-100" :
-                                    jadwal.status === "Follow UP" ? "bg-purple-50 text-purple-700 ring-purple-200 hover:bg-purple-100" :
-                                    jadwal.status === "Fix Schedule" ? "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100" :
-                                    jadwal.status === "Reject" ? "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100" :
-                                    jadwal.status === "Nomor Sales" ? "bg-orange-50 text-orange-700 ring-orange-200 hover:bg-orange-100" :
-                                    "bg-slate-50 text-slate-700 ring-slate-200 hover:bg-slate-100"
+                                <SelectTrigger className={`w-[140px] h-8 text-[10px] font-bold uppercase tracking-widest border-0 ring-1 ring-inset transition-all rounded-md pl-3 pr-2 gap-2 shadow-none ${
+                                    jadwal.status === "On Going" ? "bg-notion-sky text-link-blue ring-notion-sky hover:bg-notion-sky/80" :
+                                    jadwal.status === "Follow UP" ? "bg-notion-lavender text-brand-purple-800 ring-notion-lavender hover:bg-notion-lavender/80" :
+                                    jadwal.status === "Fix Schedule" ? "bg-notion-mint text-brand-green ring-notion-mint hover:bg-notion-mint/80" :
+                                    jadwal.status === "Reject" ? "bg-notion-rose text-semantic-error ring-notion-rose hover:bg-notion-rose/80" :
+                                    jadwal.status === "Nomor Sales" ? "bg-notion-peach text-brand-orange-deep ring-notion-peach hover:bg-notion-peach/80" :
+                                    "bg-notion-gray text-muted-foreground ring-notion-gray hover:bg-notion-gray/80"
                                 }`}>
                                      <div className="flex items-center gap-2 truncate">
                                         <div className={`w-1.5 h-1.5 rounded-full ${
-                                            jadwal.status === "On Going" ? "bg-blue-500" :
-                                            jadwal.status === "Follow UP" ? "bg-purple-500" :
-                                            jadwal.status === "Fix Schedule" ? "bg-emerald-500" :
-                                            jadwal.status === "Reject" ? "bg-red-500" :
-                                            jadwal.status === "Nomor Sales" ? "bg-orange-500" :
-                                            "bg-slate-500"
+                                            jadwal.status === "On Going" ? "bg-link-blue" :
+                                            jadwal.status === "Follow UP" ? "bg-brand-purple" :
+                                            jadwal.status === "Fix Schedule" ? "bg-brand-green" :
+                                            jadwal.status === "Reject" ? "bg-semantic-error" :
+                                            jadwal.status === "Nomor Sales" ? "bg-brand-orange" :
+                                            "bg-stone"
                                         }`} />
                                         <SelectValue placeholder="Status" />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="min-w-[140px]">
-                                    <SelectItem value="On Going"><div className="flex items-center gap-2"><PlayCircle className="h-4 w-4 text-blue-500"/> On Going</div></SelectItem>
-                                    <SelectItem value="Follow UP"><div className="flex items-center gap-2"><Bell className="h-4 w-4 text-purple-500"/> Follow UP</div></SelectItem>
-                                    <SelectItem value="Fix Schedule"><div className="flex items-center gap-2"><CalendarCheck className="h-4 w-4 text-emerald-500"/> Fix Schedule</div></SelectItem>
-                                    <SelectItem value="Reject"><div className="flex items-center gap-2"><XCircle className="h-4 w-4 text-red-500"/> Reject</div></SelectItem>
-                                    <SelectItem value="Nomor Sales"><div className="flex items-center gap-2"><Phone className="h-4 w-4 text-orange-500"/> Nomor Sales</div></SelectItem>
+                                <SelectContent className="min-w-[140px] rounded-md shadow-notion-elevation-4">
+                                    <SelectItem value="On Going" className="text-[10px] font-bold uppercase"><div className="flex items-center gap-2"><PlayCircle className="h-4 w-4 text-link-blue"/> On Going</div></SelectItem>
+                                    <SelectItem value="Follow UP" className="text-[10px] font-bold uppercase"><div className="flex items-center gap-2"><Bell className="h-4 w-4 text-brand-purple"/> Follow UP</div></SelectItem>
+                                    <SelectItem value="Fix Schedule" className="text-[10px] font-bold uppercase"><div className="flex items-center gap-2"><CalendarCheck className="h-4 w-4 text-brand-green"/> Fix Schedule</div></SelectItem>
+                                    <SelectItem value="Reject" className="text-[10px] font-bold uppercase"><div className="flex items-center gap-2"><XCircle className="h-4 w-4 text-semantic-error"/> Reject</div></SelectItem>
+                                    <SelectItem value="Nomor Sales" className="text-[10px] font-bold uppercase"><div className="flex items-center gap-2"><Phone className="h-4 w-4 text-brand-orange"/> Nomor Sales</div></SelectItem>
                                 </SelectContent>
                             </Select>
                          </div>
                       </TableCell>
-                      <TableCell className="py-4 border-b border-slate-50">
+                      <TableCell className="py-4">
                         <div className="flex flex-col gap-0.5">
-                             <span className="text-sm font-semibold text-slate-700">{jadwal.nama_owner}</span>
-                             <span className="text-xs text-slate-500 font-mono">{jadwal.no_telepon}</span>
+                             <span className="text-sm font-semibold text-foreground">{jadwal.nama_owner}</span>
+                             <span className="text-[11px] text-muted-foreground font-mono">{jadwal.no_telepon}</span>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                     <TableCell colSpan={5} className="h-64 text-center">
-                        <div className="flex flex-col items-center justify-center opacity-50">
-                            <FileText className="h-12 w-12 text-slate-300 mb-2" />
-                            <p className="font-medium text-slate-500">No schedules found</p>
+                     <TableCell colSpan={6} className="h-64 text-center">
+                        <div className="flex flex-col items-center justify-center opacity-30">
+                            <FileStack className="h-12 w-12 mb-2" />
+                            <p className="font-normal text-sm">No schedules found matching filters.</p>
                         </div>
                      </TableCell>
                   </TableRow>
@@ -1075,73 +1075,34 @@ export default function HalamanTabel() {
         <div className="md:hidden space-y-4">
             {currentItems.length > 0 ? (
                 currentItems.map((jadwal) => (
-                    <div key={jadwal.id} className="glass-card p-5 space-y-4 relative overflow-hidden">
+                    <div key={jadwal.id} className="bg-white border border-border p-5 space-y-4 relative overflow-hidden rounded-xl">
                          {/* Status Stripe */}
                          <div className={`absolute top-0 left-0 w-1 h-full ${
-                             jadwal.tipe_outlet === "Online" ? "bg-emerald-500" : "bg-amber-500"
+                             jadwal.tipe_outlet === "Online" ? "bg-brand-green" : "bg-brand-orange"
                          }`} />
 
                          {/* Header */}
                          <div className="flex justify-between items-start pl-2">
-                            <div>
-                                <h3 className="font-bold text-slate-800 text-lg leading-tight">{jadwal.nama_outlet}</h3>
-                                <div className="flex flex-wrap gap-2 mt-1.5">
+                            <div className="space-y-1.5">
+                                <h3 className="font-bold text-foreground text-lg leading-tight">{jadwal.nama_outlet}</h3>
+                                <div className="flex flex-wrap gap-2">
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
                                         jadwal.tipe_outlet === "Online" 
-                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                                        : "bg-amber-50 text-amber-600 border-amber-100"
+                                        ? "bg-notion-mint text-brand-green border-notion-mint" 
+                                        : "bg-notion-peach text-brand-orange-deep border-notion-peach"
                                     }`}>
                                         {jadwal.tipe_outlet}
                                     </span>
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-blue-50 text-blue-600 border border-blue-100">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-notion-sky text-link-blue border border-notion-sky">
                                         {jadwal.tipe_langganan}
-                                    </span>
-                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
-                                        jadwal.status === "On Going" ? "bg-blue-50 text-blue-600 border-blue-100" :
-                                        jadwal.status === "Follow UP" ? "bg-purple-50 text-purple-600 border-purple-100" :
-                                        jadwal.status === "Fix Schedule" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                        jadwal.status === "Reject" ? "bg-red-50 text-red-600 border-red-100" :
-                                        jadwal.status === "Nomor Sales" ? "bg-orange-50 text-orange-600 border-orange-100" :
-                                        "bg-slate-50 text-slate-600 border-slate-100"
-                                     }`}>
-                                        <Select
-                                            value={jadwal.status || "On Going"}
-                                            onValueChange={(val) => handleQuickStatusUpdate(jadwal.id, val)}
-                                        >
-                                            <SelectTrigger className={`h-6 text-[10px] font-bold uppercase tracking-wide border-0 ring-0 focus:ring-0 bg-transparent p-0 gap-1.5 ${
-                                                jadwal.status === "On Going" ? "text-blue-700" :
-                                                jadwal.status === "Follow UP" ? "text-purple-700" :
-                                                jadwal.status === "Fix Schedule" ? "text-emerald-700" :
-                                                jadwal.status === "Reject" ? "text-red-700" :
-                                                jadwal.status === "Nomor Sales" ? "text-orange-700" :
-                                                "text-slate-700"
-                                            }`}>
-                                                 <div className="flex items-center gap-1.5">
-                                                    {jadwal.status === "On Going" ? <PlayCircle className="h-3 w-3" /> :
-                                                    jadwal.status === "Follow UP" ? <Bell className="h-3 w-3" /> :
-                                                    jadwal.status === "Fix Schedule" ? <CalendarCheck className="h-3 w-3" /> :
-                                                    jadwal.status === "Reject" ? <XCircle className="h-3 w-3" /> :
-                                                    jadwal.status === "Nomor Sales" ? <Phone className="h-3 w-3" /> :
-                                                    <Circle className="h-3 w-3" />}
-                                                    <SelectValue placeholder="Status" />
-                                                </div>
-                                            </SelectTrigger>
-                                             <SelectContent>
-                                                <SelectItem value="On Going"><div className="flex items-center gap-2"><PlayCircle className="h-4 w-4 text-blue-500"/> On Going</div></SelectItem>
-                                                <SelectItem value="Follow UP"><div className="flex items-center gap-2"><Bell className="h-4 w-4 text-purple-500"/> Follow UP</div></SelectItem>
-                                                <SelectItem value="Fix Schedule"><div className="flex items-center gap-2"><CalendarCheck className="h-4 w-4 text-emerald-500"/> Fix Schedule</div></SelectItem>
-                                                <SelectItem value="Reject"><div className="flex items-center gap-2"><XCircle className="h-4 w-4 text-red-500"/> Reject</div></SelectItem>
-                                                <SelectItem value="Nomor Sales"><div className="flex items-center gap-2"><Phone className="h-4 w-4 text-orange-500"/> Nomor Sales</div></SelectItem>
-                                            </SelectContent>
-                                        </Select>
                                     </span>
                                 </div>
                             </div>
                             <Button
                                 onClick={() => openModal(jadwal)}
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 rounded-full hover:bg-slate-100 text-slate-400"
+                                className="h-9 px-3 rounded-md border-input hover:bg-secondary"
                             >
                                 <MessageSquare className="h-4 w-4" />
                             </Button>
@@ -1150,47 +1111,75 @@ export default function HalamanTabel() {
                          {/* Content */}
                          <div className="grid grid-cols-2 gap-4 pl-2">
                             <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
                                     <Calendar className="h-3 w-3" /> Date
                                 </p>
-                                <p className="text-sm font-semibold text-slate-700">{formatTanggal(jadwal.tanggal_instalasi)}</p>
+                                <p className="text-sm font-semibold text-foreground">{formatTanggal(jadwal.tanggal_instalasi)}</p>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
                                     <Clock className="h-3 w-3" /> Time (WITA)
                                 </p>
-                                <p className="text-sm font-semibold text-slate-700">{formatWaktuWITA(jadwal.pukul_instalasi)}</p>
+                                <p className="text-sm font-semibold text-foreground">{formatWaktuWITA(jadwal.pukul_instalasi)}</p>
                             </div>
-                            <div className="space-y-1 col-span-2 border-t border-slate-50 pt-3">
-                                <p className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                            <div className="space-y-1 col-span-2 border-t border-border pt-3">
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
                                     <User className="h-3 w-3" /> Contact Info
                                 </p>
                                 <div className="flex justify-between items-center">
-                                    <p className="text-sm font-medium text-slate-700">{jadwal.nama_owner}</p>
-                                    <p className="text-xs font-mono text-slate-500">{jadwal.no_telepon}</p>
+                                    <p className="text-sm font-bold text-foreground">{jadwal.nama_owner}</p>
+                                    <p className="text-xs font-mono text-muted-foreground">{jadwal.no_telepon}</p>
                                 </div>
                             </div>
                          </div>
 
                          {/* Footer / IDs */}
-                         <div className="pl-2 pt-2 flex flex-wrap gap-2">
-                            {jadwal.no_invoice && (
-                                <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">
-                                    {jadwal.no_invoice}
-                                </span>
-                            )}
-                             {jadwal.sch_leads && (
-                                <span className="text-[10px] font-mono text-blue-400 bg-blue-50/50 px-2 py-1 rounded">
-                                    {jadwal.sch_leads}
-                                </span>
-                            )}
+                         <div className="pl-2 pt-2 flex flex-wrap gap-2 items-center justify-between border-t border-border mt-2">
+                             <div className="flex gap-2">
+                                {jadwal.no_invoice && (
+                                    <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-2 py-1 rounded">
+                                        {jadwal.no_invoice}
+                                    </span>
+                                )}
+                                 {jadwal.sch_leads && (
+                                    <span className="text-[10px] font-bold text-link-blue bg-notion-sky px-2 py-1 rounded">
+                                        {jadwal.sch_leads}
+                                    </span>
+                                )}
+                             </div>
+                             
+                             <Select
+                                value={jadwal.status || "On Going"}
+                                onValueChange={(val) => handleQuickStatusUpdate(jadwal.id, val)}
+                            >
+                                <SelectTrigger className="h-7 text-[10px] font-bold uppercase tracking-widest border-0 ring-0 focus:ring-0 bg-secondary px-2 gap-1.5 rounded-md">
+                                     <div className="flex items-center gap-1.5">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${
+                                            jadwal.status === "On Going" ? "bg-link-blue" :
+                                            jadwal.status === "Follow UP" ? "bg-brand-purple" :
+                                            jadwal.status === "Fix Schedule" ? "bg-brand-green" :
+                                            jadwal.status === "Reject" ? "bg-semantic-error" :
+                                            jadwal.status === "Nomor Sales" ? "bg-brand-orange" :
+                                            "bg-stone"
+                                        }`} />
+                                        <SelectValue placeholder="Status" />
+                                    </div>
+                                </SelectTrigger>
+                                 <SelectContent className="rounded-md">
+                                    <SelectItem value="On Going" className="text-[10px] font-bold uppercase">On Going</SelectItem>
+                                    <SelectItem value="Follow UP" className="text-[10px] font-bold uppercase">Follow UP</SelectItem>
+                                    <SelectItem value="Fix Schedule" className="text-[10px] font-bold uppercase">Fix Schedule</SelectItem>
+                                    <SelectItem value="Reject" className="text-[10px] font-bold uppercase">Reject</SelectItem>
+                                    <SelectItem value="Nomor Sales" className="text-[10px] font-bold uppercase">Nomor Sales</SelectItem>
+                                </SelectContent>
+                            </Select>
                          </div>
                     </div>
                 ))
             ) : (
-                <div className="glass-card p-10 flex flex-col items-center justify-center text-center opacity-60">
-                     <FileText className="h-10 w-10 text-slate-300 mb-3" />
-                     <p className="font-medium text-slate-500">No schedules found</p>
+                <div className="bg-white border border-border p-10 flex flex-col items-center justify-center text-center rounded-xl">
+                     <FileStack className="h-10 w-10 text-muted-foreground opacity-30 mb-3" />
+                     <p className="font-normal text-muted-foreground">No schedules found</p>
                 </div>
             )}
         </div>  
@@ -1205,10 +1194,10 @@ export default function HalamanTabel() {
 
        {/* Message Modal */}
        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col rounded-2xl border-0 shadow-2xl p-0 overflow-hidden bg-white ring-1 ring-black/5">
-            <DialogHeader className="p-6 pb-4 border-b border-slate-100 flex flex-row items-center justify-between flex-shrink-0 space-y-0">
-                <DialogTitle className="flex items-center gap-3 text-lg font-bold text-slate-800">
-                    <div className={`p-2.5 rounded-xl ${isEditing ? "bg-blue-50 text-blue-600" : "bg-indigo-50 text-indigo-600"}`}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col rounded-xl border-0 shadow-notion-elevation-4 p-0 overflow-hidden bg-white ring-1 ring-black/5">
+            <DialogHeader className="p-6 pb-4 border-b border-border flex flex-row items-center justify-between flex-shrink-0 space-y-0">
+                <DialogTitle className="flex items-center gap-3 text-lg font-bold text-foreground">
+                    <div className={`p-2.5 rounded-lg ${isEditing ? "bg-notion-sky text-primary" : "bg-notion-lavender text-brand-purple"}`}>
                         {isEditing ? <Edit className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
                     </div>
                    {isEditing ? "Edit Schedule Details" : "Send WhatsApp Message"}
@@ -1221,20 +1210,20 @@ export default function HalamanTabel() {
                     /* Default VIEW: Message Templates */
                     <>
                         {selectedJadwal && (
-                            <div className="relative p-5 rounded-2xl bg-slate-50 border border-slate-100 flex items-start gap-4">
-                                <div className={`p-3 rounded-xl shadow-sm ${selectedJadwal.tipe_outlet === "Online" ? "bg-white text-emerald-600" : "bg-white text-amber-600"}`}>
+                            <div className="relative p-5 rounded-xl bg-secondary/30 border border-border flex items-start gap-4">
+                                <div className={`p-3 rounded-lg shadow-none border border-border ${selectedJadwal.tipe_outlet === "Online" ? "bg-white text-brand-green" : "bg-white text-brand-orange"}`}>
                                     {selectedJadwal.tipe_outlet === "Online" ? <MonitorPlay className="h-6 w-6" /> : <Map className="h-6 w-6" />}
                                 </div>
                                 <div className="space-y-1">
-                                    <h4 className="font-bold text-slate-800 text-lg leading-tight">{selectedJadwal.nama_outlet}</h4>
-                                    <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                                    <h4 className="font-bold text-foreground text-lg leading-tight">{selectedJadwal.nama_outlet}</h4>
+                                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-tight">
                                          <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {formatTanggal(selectedJadwal.tanggal_instalasi)}</span>
-                                         <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                         <span className="w-1 h-1 rounded-full bg-stone" />
                                          <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatWaktuWITA(selectedJadwal.pukul_instalasi)}</span>
                                     </div>
                                     {selectedJadwal.no_invoice && (
                                         <div className="pt-1">
-                                            <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-200/50 px-2 py-1 rounded-md border border-slate-200">
+                                            <span className="text-[10px] uppercase font-bold text-muted-foreground bg-notion-gray px-2 py-1 rounded-md border border-border">
                                                 {selectedJadwal.no_invoice}
                                             </span>
                                         </div>
@@ -1244,25 +1233,25 @@ export default function HalamanTabel() {
                         )}
 
                         <div className="space-y-5">
-                           <div className="flex items-center justify-between p-1 bg-slate-100 rounded-lg">
-                               <div className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Timezone</div>
+                           <div className="flex items-center justify-between p-1 bg-secondary rounded-md">
+                               <div className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Timezone</div>
                                <Select
                                 value={selectedTimezone}
                                 onValueChange={setSelectedTimezone}
                               >
-                                <SelectTrigger className="w-[180px] h-8 border-0 bg-white shadow-sm rounded-md text-xs font-medium focus:ring-0">
+                                <SelectTrigger className="w-[180px] h-8 border-0 bg-white shadow-none rounded-md text-[11px] font-bold uppercase focus:ring-0">
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="WIB">WIB (Waktu Indonesia Barat)</SelectItem>
-                                  <SelectItem value="WITA">WITA (Waktu Indonesia Tengah)</SelectItem>
-                                  <SelectItem value="WIT">WIT (Waktu Indonesia Timur)</SelectItem>
+                                <SelectContent className="rounded-md">
+                                  <SelectItem value="WIB">WIB (BARAT)</SelectItem>
+                                  <SelectItem value="WITA">WITA (TENGAH)</SelectItem>
+                                  <SelectItem value="WIT">WIT (TIMUR)</SelectItem>
                                 </SelectContent>
                               </Select>
                            </div>
 
                              <div className="space-y-3">
-                                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Choose Template</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Choose Template</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {selectedJadwal?.tipe_outlet === "Online" ? (
                                         <>
@@ -1284,8 +1273,8 @@ export default function HalamanTabel() {
 
                         <div className="space-y-3">
                             <div className="flex justify-between items-center ml-1">
-                                <Label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Message Preview</Label>
-                                <Button variant="ghost" size="sm" onClick={copyToClipboard} className="h-6 text-xs font-medium text-blue-600 hover:bg-blue-50 -mr-2">
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Message Preview</Label>
+                                <Button variant="ghost" size="sm" onClick={copyToClipboard} className="h-6 text-[10px] font-bold text-primary hover:bg-secondary -mr-2 uppercase tracking-tight">
                                     <Copy className="h-3 w-3 mr-1.5" /> Copy Text
                                 </Button>
                             </div>
@@ -1293,7 +1282,7 @@ export default function HalamanTabel() {
                                 <Textarea
                                     value={generatedMessage}
                                     readOnly
-                                    className="min-h-[160px] bg-slate-50 border-slate-200 focus:bg-white focus:border-blue-300 transition-all rounded-xl font-mono text-sm leading-relaxed p-4 resize-none shadow-inner"
+                                    className="min-h-[160px] bg-secondary/10 border-border focus:bg-background focus:border-primary transition-all rounded-md font-mono text-xs leading-relaxed p-4 resize-none shadow-none"
                                     placeholder="Select a template to generate message..."
                                 />
                             </div>
@@ -1305,9 +1294,9 @@ export default function HalamanTabel() {
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* DETAILS */}
                             <div className="space-y-5">
-                                <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-4">
-                                    <Building className="h-4 w-4 text-slate-400" />
-                                    <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Outlet Info</h4>
+                                <div className="flex items-center gap-2 pb-2 border-b border-border mb-4">
+                                    <Building className="h-3 w-3 text-muted-foreground" />
+                                    <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Outlet Info</h4>
                                 </div>
                                 
                                 <FormInput
@@ -1339,23 +1328,23 @@ export default function HalamanTabel() {
                             {/* CLASSIFICATION & TIMING */}
                             <div className="space-y-6">
                                 <div className="space-y-5">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-4">
-                                        <Filter className="h-4 w-4 text-slate-400" />
-                                        <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Classification</h4>
+                                    <div className="flex items-center gap-2 pb-2 border-b border-border mb-4">
+                                        <Filter className="h-3 w-3 text-muted-foreground" />
+                                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Classification</h4>
                                     </div>
                                     
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-semibold text-slate-500">Tipe Outlet</Label>
+                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tipe Outlet</Label>
                                             <Select
                                                 name="tipe_outlet"
                                                 value={editFormData?.tipe_outlet}
                                                 onValueChange={(v) => handleEditSelectChange("tipe_outlet", v)}
                                             >
-                                                <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 h-10">
+                                                <SelectTrigger className="rounded-md border-input bg-background h-10 shadow-none text-sm font-medium">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="rounded-md">
                                                     <SelectItem value="Online">Online</SelectItem>
                                                     <SelectItem value="Offline">Offline</SelectItem>
                                                 </SelectContent>
@@ -1377,27 +1366,27 @@ export default function HalamanTabel() {
                                 </div>
 
                                 <div className="space-y-4 pt-2">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 mb-4">
-                                        <Clock className="h-4 w-4 text-slate-400" />
-                                        <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Schedule</h4>
+                                    <div className="flex items-center gap-2 pb-2 border-b border-border mb-4">
+                                        <Clock className="h-3 w-3 text-muted-foreground" />
+                                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Schedule</h4>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                          <div className="space-y-2">
-                                            <Label className="text-xs font-semibold text-slate-500">Tanggal</Label>
+                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tanggal</Label>
                                             <DatePicker
                                                 date={editFormData?.tanggal_instalasi}
                                                 onSelect={handleEditDateChange}
                                             />
                                          </div>
                                           <div className="space-y-2">
-                                            <Label className="text-xs font-semibold text-slate-500">Waktu (WITA)</Label>
+                                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Waktu (WITA)</Label>
                                             <div className="flex gap-2">
                                                 <Select
                                                     value={editFormData?.pukul_instalasi?.split(":")[0] || "00"}
                                                     onValueChange={(val) => handleEditTimeChange("hour", val)}
                                                 >
-                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 h-10"><SelectValue /></SelectTrigger>
-                                                    <SelectContent className="max-h-60">
+                                                    <SelectTrigger className="rounded-md border-input bg-background h-10 shadow-none text-sm font-medium"><SelectValue /></SelectTrigger>
+                                                    <SelectContent className="max-h-60 rounded-md">
                                                         {hours.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
@@ -1405,8 +1394,8 @@ export default function HalamanTabel() {
                                                     value={editFormData?.pukul_instalasi?.split(":")[1] || "00"}
                                                     onValueChange={(val) => handleEditTimeChange("minute", val)}
                                                 >
-                                                    <SelectTrigger className="rounded-xl border-slate-200 bg-slate-50/50 h-10"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
+                                                    <SelectTrigger className="rounded-md border-input bg-background h-10 shadow-none text-sm font-medium"><SelectValue /></SelectTrigger>
+                                                    <SelectContent className="rounded-md">
                                                         {minutes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
@@ -1424,35 +1413,35 @@ export default function HalamanTabel() {
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-slate-100">
+                        <div className="pt-6 border-t border-border">
                               <FormInput
-                                label="Alamat Lengkap / Link Google Meet"
+                                label="Address / Link Meet"
                                 name={editFormData?.tipe_outlet === "Online" ? "link_meet" : "alamat"}
                                 value={editFormData?.tipe_outlet === "Online" ? editFormData?.link_meet : editFormData?.alamat}
                                 onChange={handleEditInputChange}
-                                icon={editFormData?.tipe_outlet === "Online" ? <Link2 className="h-4 w-4 text-slate-400"/> : <MapPin className="h-4 w-4 text-slate-400"/>}
+                                icon={editFormData?.tipe_outlet === "Online" ? <Link2 className="h-3 w-3 text-muted-foreground"/> : <MapPin className="h-3 w-3 text-muted-foreground"/>}
                             />
                         </div>
                     </form>
                 )}
             </div>
 
-            <DialogFooter className="p-6 pt-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-between items-center backdrop-blur-sm">
+            <DialogFooter className="p-6 pt-4 border-t border-border bg-secondary/20 flex flex-col sm:flex-row gap-3 sm:justify-between items-center">
                  {isEditing ? (
                      <>
-                        <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl text-slate-500 hover:text-slate-700">Cancel</Button>
-                        <Button form="edit-form" type="submit" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 px-6">
+                        <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="rounded-md text-muted-foreground hover:bg-secondary px-6">Cancel</Button>
+                        <Button form="edit-form" type="submit" className="bg-primary hover:bg-primary/90 text-white rounded-md shadow-none px-8 font-semibold">
                             <Save className="h-4 w-4 mr-2" /> Save Changes
                         </Button>
                      </>
                  ) : (
                     <>
                          <div className="flex gap-2">
-                             <Button variant="ghost" onClick={handleDelete} className="rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 px-3">
+                             <Button variant="ghost" onClick={handleDelete} className="rounded-md text-semantic-error hover:bg-notion-rose/30 px-3">
                                  <Trash2 className="h-4 w-4" />
                              </Button>
-                             <Button variant="outline" onClick={handleEditClick} className="rounded-xl border-slate-200 text-slate-700 hover:bg-white hover:text-blue-600 hover:border-blue-200">
-                                 <Edit className="h-4 w-4 mr-2" /> Edit Details
+                             <Button variant="outline" onClick={handleEditClick} className="rounded-md border-input text-foreground hover:bg-secondary font-semibold text-xs px-6 h-10">
+                                 <Edit className="h-4 w-4 mr-2" /> EDIT INFO
                              </Button>
                          </div>
                         
@@ -1461,18 +1450,18 @@ export default function HalamanTabel() {
                                  onClick={handleShare}
                                  disabled={!generatedMessage}
                                  variant="outline"
-                                 className="rounded-xl border-slate-200 text-slate-700 bg-white hover:bg-slate-50 hidden sm:inline-flex"
+                                 className="rounded-md border-input text-foreground bg-white hover:bg-secondary hidden sm:inline-flex px-6 h-10 font-semibold text-xs"
                              >
                                  <Share2 className="h-4 w-4 mr-2" />
-                                 Share
+                                 SHARE
                              </Button>
                              <Button 
                                  onClick={sendToWhatsApp} 
                                  disabled={!generatedMessage}
-                                 className="bg-[#25D366] hover:bg-[#128C7E] text-white rounded-xl shadow-lg shadow-green-500/20 font-bold px-6 flex-1 sm:flex-none"
+                                 className="bg-brand-green hover:bg-brand-green/90 text-white rounded-md shadow-none font-bold px-8 flex-1 sm:flex-none h-10 text-xs"
                              >
                                  <Send className="h-4 w-4 mr-2" />
-                                 Send WA
+                                 SEND WA
                              </Button>
                          </div>
                     </>
@@ -1490,9 +1479,13 @@ function TemplateBtn({ onClick, label, variant = "outline" }: any) {
         <Button
             onClick={onClick}
             variant={variant === "destructive" ? "destructive" : "outline"}
-            className={`justify-start h-auto py-3 px-4 rounded-xl text-left ${variant !== "destructive" ? "border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200" : "bg-red-50 text-red-600 border-red-100 hover:bg-red-100"} transition-all`}
+            className={`justify-start h-auto py-3 px-4 rounded-md text-left transition-all border ${
+                variant !== "destructive" 
+                ? "border-input bg-background hover:bg-secondary hover:text-primary hover:border-primary/30" 
+                : "bg-notion-rose text-semantic-error border-notion-rose hover:bg-notion-rose/70"
+            }`}
         >
-            <span className="text-sm font-medium truncate w-full">{label}</span>
+            <span className="text-[11px] font-bold uppercase tracking-tight truncate w-full">{label}</span>
         </Button>
     )
 }
@@ -1508,12 +1501,12 @@ function FormInput({
   icon,
 }: any) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 group">
       <Label
         htmlFor={name}
-        className="text-xs font-semibold text-slate-500"
+        className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1 transition-colors group-hover:text-primary"
       >
-        {label}
+        <span className="flex items-center gap-1.5">{icon}{label}</span>
       </Label>
       <Input
         id={name}
@@ -1523,7 +1516,7 @@ function FormInput({
         type={type}
         required={required}
         disabled={disabled}
-        className="rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all duration-300 h-10"
+        className="rounded-md border-input bg-background hover:bg-secondary focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all duration-300 h-10 text-sm font-normal shadow-none"
       />
     </div>
   );
